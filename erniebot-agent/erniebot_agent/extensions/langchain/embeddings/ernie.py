@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import logging
+import time
 from typing import Any, Dict, List, Optional
 
 from langchain.pydantic_v1 import BaseModel, root_validator
@@ -70,6 +71,7 @@ class ErnieEmbeddings(BaseModel, Embeddings):
         for chunk in text_in_chunks:
             resp = self.client.create(_config_=self._get_auth_config(), input=chunk, model=self.model)
             lst.extend([res["embedding"] for res in resp["data"]])
+            time.sleep(1)
         return lst
 
     async def aembed_documents(self, texts: List[str]) -> List[List[float]]:

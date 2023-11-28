@@ -1,14 +1,15 @@
 from __future__ import annotations
 
+<<<<<<< HEAD
 import logging
 import time
+=======
+>>>>>>> upstream/develop
 from typing import Any, Dict, List, Optional
 
 from langchain.pydantic_v1 import BaseModel, root_validator
 from langchain.schema.embeddings import Embeddings
 from langchain.utils import get_from_dict_or_env
-
-logger = logging.getLogger(__name__)
 
 
 class ErnieEmbeddings(BaseModel, Embeddings):

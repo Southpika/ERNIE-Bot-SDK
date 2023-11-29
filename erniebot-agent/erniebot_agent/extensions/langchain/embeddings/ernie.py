@@ -1,10 +1,7 @@
 from __future__ import annotations
 
-<<<<<<< HEAD
 import logging
 import time
-=======
->>>>>>> upstream/develop
 from typing import Any, Dict, List, Optional
 
 from langchain.pydantic_v1 import BaseModel, root_validator

@@ -16,4 +16,5 @@ from erniebot_agent.utils.logging import logger, setup_logging
 
 __all__ = ["logger"]
 
-setup_logging()
+setup_logging('DEBUG')
+logger.info('Finish Loading')

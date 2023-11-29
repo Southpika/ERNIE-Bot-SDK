@@ -55,13 +55,7 @@ def setup_logging(verbosity: Optional[str] = None, use_standard_format: bool = T
     if verbosity is not None:
         numeric_level = getattr(logging, verbosity.upper(), None)
         if not isinstance(numeric_level, int):
-<<<<<<< HEAD
-            raise ValueError(f"Invalid log level: {verbosity}")
-    else:
-        numeric_level = getattr(logging, "DEBUG", None)
-=======
             raise ValueError(f"Invalid logging level: {verbosity}")
->>>>>>> upstream/develop
 
         logger.setLevel(numeric_level)
         logger.propagate = False

@@ -38,7 +38,8 @@ class Message:
     def token_count(self, token_count: int):
         """Set the number of tokens of the message."""
         if self._token_count is not None:
-            raise AttributeError("The token count of the message can only be set once.")
+            # raise AttributeError("The token count of the message can only be set once.")
+            pass
         self._token_count = token_count
 
     def to_dict(self) -> Dict[str, str]:
@@ -57,23 +58,11 @@ class Message:
         parts: List[str] = []
         for name in self._param_names:
             value = getattr(self, name)
-<<<<<<< HEAD
-
-            if isinstance(value, dict):
-                res += f"{name}: \n"
-                for k, v in value.items():
-                    res += f"    {k}: {v}, \n"
-            elif value is not None and value != "":
-                res += f"{name}: \n    {value}, \n"
-
-        return res[:-2]
-=======
             if value is not None and value != "":
                 parts.append(f"{name}: {repr(value)}")
         if self._token_count is not None:
             parts.append(f"token_count: {self._token_count}")
         return ", ".join(parts)
->>>>>>> upstream/develop
 
 
 class SystemMessage(Message):

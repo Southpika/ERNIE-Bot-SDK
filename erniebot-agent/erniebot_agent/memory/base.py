@@ -34,8 +34,8 @@ class MessageManager:
         """
         The message manager manage one and only system message.
         """
-        if self._system_message is None:
-            raise RuntimeError("system message is not set, please check the system message")
+        # if self._system_message is None:
+            # raise RuntimeError("system message is not set, please check the system message")
         return self._system_message
 
     @system_message.setter
@@ -54,11 +54,15 @@ class MessageManager:
         else:
             self.messages.append(message)
 
-    def pop_message(self) -> Message:
-        return self.messages.pop(0)
+    def pop_message(self, idx: int = 0) -> Message:
+        return self.messages.pop(idx)
 
     def clear_messages(self) -> None:
         self.messages = []
+    
+    def edit_message(self, idx: int, message: Message) -> None:
+        self.messages[idx].content = message
+        self.messages[idx].token_count = 1
 
     def update_last_message_token_count(self, token_count: int):
         if token_count == 0:
@@ -82,7 +86,9 @@ class Memory:
 
     def add_message(self, message: Message):
         if isinstance(message, AIMessage):
-            self.msg_manager.update_last_message_token_count(message.query_tokens_count)
+            # self.msg_manager.update_last_message_token_count(message.query_tokens_count)
+            pass
+
         self.msg_manager.add_message(message)
 
     def get_messages(self) -> List[Message]:
@@ -93,6 +99,9 @@ class Memory:
 
     def clear_chat_history(self):
         self.msg_manager.clear_messages()
+    
+    def edit_message(self, idx: int, message: Message) -> None:
+        self.msg_manager.edit_message(idx, message)
 
 
 class WholeMemory(Memory):

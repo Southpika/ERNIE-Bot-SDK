@@ -19,13 +19,8 @@ import uuid
 from typing import Union
 
 import anyio
-<<<<<<< HEAD
-import erniebot_agent
-from erniebot_agent.file_io.base import File
-=======
 from erniebot_agent.file_io.base import File
 from erniebot_agent.utils.logging import logger
->>>>>>> upstream/develop
 
 LOCAL_FILE_ID_PREFIX = "file-local-"
 
@@ -47,11 +42,7 @@ class LocalFile(File):
 def create_local_file_from_path(file_path: Union[str, os.PathLike]) -> LocalFile:
     file_path = pathlib.Path(file_path)
     if not file_path.exists():
-<<<<<<< HEAD
-        erniebot_agent.logger.warn("File %s does not exist.", file_path)
-=======
         logger.warn("File %s does not exist.", file_path)
->>>>>>> upstream/develop
     file_id = generate_local_file_id()
     filename = file_path.name
     created_at = int(time.time())

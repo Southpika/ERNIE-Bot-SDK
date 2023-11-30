@@ -58,7 +58,7 @@ ImageGenerationTool的入参为根据场景描述总结的图片内容：
 当我说游戏开始的时候，开始游戏。每次只要输出【一组】互动，【不要自己生成互动】。"""
 
 # 创建消息队列用于传递文件地址
-FILE_QUEUE: queue.Queue[str] = queue.Queue()
+FILE_QUEUE: queue.Queue[ToolResponse] = queue.Queue()
 
 
 def parse_args():

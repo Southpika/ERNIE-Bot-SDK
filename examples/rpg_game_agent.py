@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-
 # Copyright (c) 2023 PaddlePaddle Authors. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -24,26 +22,26 @@ from typing import AsyncGenerator, List, Optional, Union
 
 import gradio as gr
 from erniebot_agent.agents.base import Agent
+from erniebot_agent.agents.schema import ToolResponse
 from erniebot_agent.chat_models.erniebot import ERNIEBot
-from erniebot_agent.memory.base import Memory
-from erniebot_agent.messages import AIMessage, HumanMessage, Message, SystemMessage
+from erniebot_agent.memory.sliding_window_memory import SlidingWindowMemory
+from erniebot_agent.messages import AIMessage, HumanMessage, SystemMessage
 from erniebot_agent.tools.base import Tool
-
 from erniebot_agent.tools.ImageGenerateTool import ImageGenerationTool
 from erniebot_agent.tools.tool_manager import ToolManager
 from erniebot_agent.utils.logging import logger
 
 import erniebot as eb
-from erniebot_agent.memory.sliding_window_memory import SlidingWindowMemory
 
 INSTRUCTION = """你的指令是为我提供一个基于《{SCRIPT}》剧情的在线RPG游戏体验。\
 在这个游戏中，玩家将扮演《{SCRIPT}》剧情关键角色，你可以自行决定玩家的角色。\
 游戏情景将基于《{SCRIPT}》剧情。这个游戏的玩法是互动式的，并遵循以下特定格式：
 
-<场景描述>：根据玩家的选择，故事情节将按照《{SCRIPT}》剧情的线索发展。你将描述角色所处的环境和情况。剧情发展请尽量快，场景描述不少于30字。
+<场景描述>：根据玩家的选择，故事情节将按照《{SCRIPT}》剧情的线索发展。你将描述角色所处的环境和情况。场景描述不少于50字。
 
-<场景图片>：对于每个场景，你将创造一个概括该情况的图像。在这个步骤你需要调用画图工具ImageGenerationTool。\
-ImageGenerationTool的入参为根据场景描述总结的图片内容，请按json的格式输出：
+<场景图片>：对于每个场景，你将创造一个概括该情况的图像。在这个步骤你需要调用画图工具ImageGenerationTool并按json格式输出相应调用详情。\
+ImageGenerationTool的入参为根据场景描述总结的图片内容：
+##调用ImageGenerationTool##
 ```json
 {{
     'tool_name':'ImageGenerationTool',
@@ -58,11 +56,6 @@ ImageGenerationTool的入参为根据场景描述总结的图片内容，请按j
 你的重点将仅仅放在提供场景描述，场景图片和选择上，不包含其他游戏指导。场景尽量不要重复，要丰富一些。
 
 当我说游戏开始的时候，开始游戏。每次只要输出【一组】互动，【不要自己生成互动】。"""
-
-SYSTEM_MESSAGE = "你是《{SCRIPT}》沉浸式图文RPG场景助手，能够生成图文剧情。\
-                并给出玩家选项，整个故事将围绕《{SCRIPT}》丰富而复杂的世界展开。\
-                每次互动必须包括<场景描述>、<场景图片>(需调用ImageGenerationTool并填写json)和<选择>。\
-                每次仅生成一轮互动，不要自己生成玩家的选择"
 
 # 创建消息队列用于传递文件地址
 FILE_QUEUE: queue.Queue[str] = queue.Queue()
@@ -79,33 +72,6 @@ def parse_args():
         default="/Users/tanzhehao/Documents/ERINE/ERNIE-Bot-SDK/examples/douluo_index_hf",
     )
     return parser.parse_args()
-
-
-# class SlidingWindowMemory(Memory):
-#     """This class controls max number of messages."""
-
-#     def __init__(self, max_num_message: int):
-#         super().__init__()
-#         self.max_num_message = max_num_message
-
-#         assert (isinstance(max_num_message, int)) and (
-#             max_num_message > 0
-#         ), "max_num_message should be positive integer, but got {max_token_limit}".format(
-#             max_token_limit=max_num_message
-#         )
-
-#     def add_message(self, message: Message):
-#         super().add_message(message=message)
-#         self.prune_message()
-
-#     def prune_message(self):
-#         # 保留第一轮的对话用于指令
-#         while len(self.get_messages()) > (self.max_num_message + 1) * 2:
-#             # 需修改memory的pop_message方法，支持将消息从内存中按索引删除
-#             self.msg_manager.pop_message(2)
-#             # `messages` must have an odd number of elements.
-#             if len(self.get_messages()) % 2 == 0:
-#                 self.msg_manager.pop_message(2)
 
 
 # def run_tool(tool) -> None:
@@ -144,14 +110,16 @@ class Game_Agent(Agent):
         eb.api_type = "aistudio"
         eb.access_token = os.getenv("EB_ACCESS_TOKEN") if not access_token else access_token
         self.script = script
-        memory = SlidingWindowMemory(max_round, remaining_memory=2)
+        memory = SlidingWindowMemory(max_round)
         super().__init__(
             llm=ERNIEBot(model), memory=memory, tools=tools, system_message=SystemMessage(system_message)
         )
-        self.memory.msg_manager.messages = [
-            HumanMessage(INSTRUCTION.format(SCRIPT=self.script)),
-            AIMessage(content=f"好的，我将为你提供《{self.script}》沉浸式图文RPG场景体验。", function_call=None),
-        ]
+        logger.debug(self.memory)
+        # logger.debug(self.system_message)
+        # self.memory.msg_manager.messages = [
+        #     HumanMessage(INSTRUCTION.format(SCRIPT=self.script)),
+        #     AIMessage(content=f"好的，我将为你提供《{self.script}》沉浸式图文RPG场景体验。", function_call=None),
+        # ]
 
     def handle_tool(self, tool_name: str, tool_args: str) -> None:
         global FILE_QUEUE
@@ -172,7 +140,7 @@ class Game_Agent(Agent):
 
         actual_query = prompt + "根据我的选择继续生成一轮仅含包括<场景描述>、<场景图片>和<选择>的互动。"
         messages = self.memory.get_messages() + [HumanMessage(actual_query)]
-        response = await self.llm.async_chat(messages, stream=True)
+        response = await self.llm.async_chat(messages, stream=True, system=self.system_message.content)
 
         apply = False
         res = ""
@@ -201,7 +169,6 @@ class Game_Agent(Agent):
 
         self.memory.add_message(HumanMessage(prompt))
         self.memory.add_message(AIMessage(content=res, function_call=None))
-        logger.debug(len(self.memory.get_messages()))
 
     def reset_memory(self) -> None:
         self.memory.msg_manager.messages = [
@@ -250,10 +217,10 @@ class Game_Agent(Agent):
         else:
             if thread:
                 thread.join()
-
-            img_path = eval(FILE_QUEUE.get().json)['return_path']  
-            img_path = img_path.strip('"') # 去除json.dump的引号
-            logger.debug("end" + img_path)
+                tool_response: ToolResponse = FILE_QUEUE.get()
+                img_path = eval(tool_response.json)["return_path"]
+                img_path = img_path.strip('"')  # 去除json.dump的引号
+                logger.debug("end" + img_path)
 
             if function_part:
                 history[-1][1] = history[-1][1].replace(
@@ -290,6 +257,6 @@ if __name__ == "__main__":
         model=args.model,
         script=args.game,
         tools=[ImageGenerationTool()],
-        system_message=SYSTEM_MESSAGE.format(SCRIPT=args.game),
+        system_message=INSTRUCTION.format(SCRIPT=args.game),
     )
     game_system.launch_gradio_demo()

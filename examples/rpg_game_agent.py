@@ -28,11 +28,13 @@ from erniebot_agent.chat_models.erniebot import ERNIEBot
 from erniebot_agent.memory.base import Memory
 from erniebot_agent.messages import AIMessage, HumanMessage, Message, SystemMessage
 from erniebot_agent.tools.base import Tool
+
 from erniebot_agent.tools.ImageGenerateTool import ImageGenerationTool
 from erniebot_agent.tools.tool_manager import ToolManager
 from erniebot_agent.utils.logging import logger
 
 import erniebot as eb
+from erniebot_agent.memory.sliding_window_memory import SlidingWindowMemory
 
 INSTRUCTION = """你的指令是为我提供一个基于《{SCRIPT}》剧情的在线RPG游戏体验。\
 在这个游戏中，玩家将扮演《{SCRIPT}》剧情关键角色，你可以自行决定玩家的角色。\
@@ -79,31 +81,31 @@ def parse_args():
     return parser.parse_args()
 
 
-class SlidingWindowMemory(Memory):
-    """This class controls max number of messages."""
+# class SlidingWindowMemory(Memory):
+#     """This class controls max number of messages."""
 
-    def __init__(self, max_num_message: int):
-        super().__init__()
-        self.max_num_message = max_num_message
+#     def __init__(self, max_num_message: int):
+#         super().__init__()
+#         self.max_num_message = max_num_message
 
-        assert (isinstance(max_num_message, int)) and (
-            max_num_message > 0
-        ), "max_num_message should be positive integer, but got {max_token_limit}".format(
-            max_token_limit=max_num_message
-        )
+#         assert (isinstance(max_num_message, int)) and (
+#             max_num_message > 0
+#         ), "max_num_message should be positive integer, but got {max_token_limit}".format(
+#             max_token_limit=max_num_message
+#         )
 
-    def add_message(self, message: Message):
-        super().add_message(message=message)
-        self.prune_message()
+#     def add_message(self, message: Message):
+#         super().add_message(message=message)
+#         self.prune_message()
 
-    def prune_message(self):
-        # 保留第一轮的对话用于指令
-        while len(self.get_messages()) > (self.max_num_message + 1) * 2:
-            # 需修改memory的pop_message方法，支持将消息从内存中按索引删除
-            self.msg_manager.pop_message(2)
-            # `messages` must have an odd number of elements.
-            if len(self.get_messages()) % 2 == 0:
-                self.msg_manager.pop_message(2)
+#     def prune_message(self):
+#         # 保留第一轮的对话用于指令
+#         while len(self.get_messages()) > (self.max_num_message + 1) * 2:
+#             # 需修改memory的pop_message方法，支持将消息从内存中按索引删除
+#             self.msg_manager.pop_message(2)
+#             # `messages` must have an odd number of elements.
+#             if len(self.get_messages()) % 2 == 0:
+#                 self.msg_manager.pop_message(2)
 
 
 # def run_tool(tool) -> None:
@@ -137,12 +139,12 @@ class Game_Agent(Agent):
         tools: Union[ToolManager, List[Tool]],
         system_message: Optional[str] = None,
         access_token: str = "",
-        max_round: int = 2,
+        max_round: int = 3,
     ) -> None:
         eb.api_type = "aistudio"
         eb.access_token = os.getenv("EB_ACCESS_TOKEN") if not access_token else access_token
         self.script = script
-        memory = SlidingWindowMemory(max_round)
+        memory = SlidingWindowMemory(max_round, remaining_memory=2)
         super().__init__(
             llm=ERNIEBot(model), memory=memory, tools=tools, system_message=SystemMessage(system_message)
         )
@@ -199,6 +201,7 @@ class Game_Agent(Agent):
 
         self.memory.add_message(HumanMessage(prompt))
         self.memory.add_message(AIMessage(content=res, function_call=None))
+        logger.debug(len(self.memory.get_messages()))
 
     def reset_memory(self) -> None:
         self.memory.msg_manager.messages = [
@@ -248,8 +251,10 @@ class Game_Agent(Agent):
             if thread:
                 thread.join()
 
-            img_path = FILE_QUEUE.get().strip('"')  # 去除json.dump的引号
+            img_path = eval(FILE_QUEUE.get().json)['return_path']  
+            img_path = img_path.strip('"') # 去除json.dump的引号
             logger.debug("end" + img_path)
+
             if function_part:
                 history[-1][1] = history[-1][1].replace(
                     function_part,

@@ -25,7 +25,7 @@ from erniebot_agent.tools.schema import ToolParameterView
 from erniebot_agent.utils.common import download_file, get_cache_dir
 from erniebot_agent.tools.base import RemoteToolkit
 from erniebot_agent.file_io.file_manager import FileManager
-from erniebot_agent.file_io.remote_file_clients.bos_file_client import BOSFileClient
+# from erniebot_agent.file_io.remote_file_clients.bos_file_client import BOSFileClient
 from pydantic import Field
 from PIL import Image
 
@@ -70,13 +70,13 @@ class ImageGenerationTool(Tool):
 
     def __init__(self) -> None:
 
-        remote_file_client = BOSFileClient(
-            ak="8343f27745d74e6f97c99de824cd8866",
-            sk="7270c84056034bd5a112b43f952aaf34",
-            bucket_name="gdfdudu",
-            prefix="erniebot-agent/",
-        )
-        self.file_manager = FileManager(remote_file_client=remote_file_client, auto_register=True)
+        # remote_file_client = BOSFileClient(
+        #     ak="8343f27745d74e6f97c99de824cd8866",
+        #     sk="7270c84056034bd5a112b43f952aaf34",
+        #     bucket_name="gdfdudu",
+        #     prefix="erniebot-agent/",
+        # )
+        # self.file_manager = FileManager(remote_file_client=remote_file_client, auto_register=True)
         return
         self.toolkit = RemoteToolkit.from_url(
             API_URL, access_token="7d109d14c26a3e0e5a01f841927c30331ad07e62"
@@ -110,7 +110,7 @@ class ImageGenerationTool(Tool):
         # image.show()
 
         byte_str = '/private/var/folders/gw/lbw__qt16dl3sdh_5cgv_jl00000gn/T/gradio/temp_8.png'
-        return byte_str
+        return {'return_path': byte_str}
 
     @property
     def examples(self) -> List[Message]:

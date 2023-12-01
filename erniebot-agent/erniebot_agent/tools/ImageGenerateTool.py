@@ -25,7 +25,7 @@ from erniebot_agent.tools.schema import ToolParameterView
 from erniebot_agent.utils.common import download_file, get_cache_dir
 from erniebot_agent.tools.base import RemoteToolkit
 from erniebot_agent.file_io.file_manager import FileManager
-# from erniebot_agent.file_io.remote_file_clients.bos_file_client import BOSFileClient
+from erniebot_agent.file_io.remote_file import BOSFileClient
 from pydantic import Field
 from PIL import Image
 
@@ -70,18 +70,20 @@ class ImageGenerationTool(Tool):
 
     def __init__(self) -> None:
 
-        # remote_file_client = BOSFileClient(
-        #     ak="8343f27745d74e6f97c99de824cd8866",
-        #     sk="7270c84056034bd5a112b43f952aaf34",
-        #     bucket_name="gdfdudu",
-        #     prefix="erniebot-agent/",
-        # )
+        remote_file_client = BOSFileClient(
+            ak="8343f27745d74e6f97c99de824cd8866",
+            sk="7270c84056034bd5a112b43f952aaf34",
+            bucket_name="gdfdudu",
+            prefix="erniebot-agent/",
+        )
         # self.file_manager = FileManager(remote_file_client=remote_file_client, auto_register=True)
-        return
+        # return
         self.toolkit = RemoteToolkit.from_url(
             API_URL, access_token="7d109d14c26a3e0e5a01f841927c30331ad07e62"
         )
-
+        self.file_manager = FileManager(remote_file_client=remote_file_client, auto_register=True) 
+        tools =  self.toolkit.get_tools()
+        print(self.toolkit.get_tools())
         
 
     async def __call__(
@@ -92,12 +94,14 @@ class ImageGenerationTool(Tool):
         image_num: Optional[int] = 1,
     ) -> bytes:
         
-        # tool_name = "textToImage"
-        # text_to_image_tool = self.toolkit.get_tool(tool_name)
-        # res = await text_to_image_tool(text=prompt)  # json error 补充
-        # remote_file = await self.file_manager.retrieve_remote_file(res["file_id"])
-        # byte_str = await remote_file.read_content()  # TODO: transfer to image
-        # await remote_file.delete()
+        tool_name = "textToImage"
+       
+        text_to_image_tool = self.toolkit.get_tool(tool_name)
+        res = await text_to_image_tool(text=prompt)  # json error 补充
+        remote_file = await self.file_manager.retrieve_remote_file(res["file_id"])
+        self.file_manager.create_file_from_path
+        byte_str = await remote_file.read_content()  # TODO: transfer to image
+        await remote_file.delete()
 
         # FOR MOCK
         image_path = r"/Users/tanzhehao/Documents/ERINE/text_to_image.png" 
@@ -146,3 +150,5 @@ class ImageGenerationTool(Tool):
             ),
         ]
 
+if __name__ == '__main__':
+    ImageGenerationTool()

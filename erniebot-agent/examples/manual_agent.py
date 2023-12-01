@@ -55,10 +55,10 @@ class ManualAgent(Agent):
         self.prompt_template = "你的指令是为我提供一个基于以下。并遵循以下特定格式。" 
                                  
 
-        tool_prompt = "你可以使用以下Tools来帮助你完成这个任务。"
-        self._tool_manager.get_tools()                  
+        tool_prompt = "你可以使用以下Tools来帮助你完成这个任务。"               
         for tool in self._tool_manager.get_tools():
-            tool_prompt += tool
+            tool_prompt += f"[Tool Name]: {tool.tool_name} \
+                            [Tool Description]: {tool.description} \n"
 
 
     async def _async_run(self, prompt: str) -> AsyncGenerator:

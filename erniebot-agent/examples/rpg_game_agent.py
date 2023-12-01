@@ -170,12 +170,6 @@ class Game_Agent(Agent):
         self.memory.add_message(HumanMessage(prompt))
         self.memory.add_message(AIMessage(content=res, function_call=None))
 
-    def reset_memory(self) -> None:
-        self.memory.msg_manager.messages = [
-            HumanMessage(INSTRUCTION.format(SCRIPT=self.script)),
-            AIMessage(content=f"好的，我将为你提供《{self.script}》沉浸式图文RPG场景体验。", function_call=None),
-        ]
-
     def launch_gradio_demo(self) -> None:
         with gr.Blocks() as demo:
             context_chatbot = gr.Chatbot(label=self.script, height=750)
@@ -231,15 +225,17 @@ class Game_Agent(Agent):
 
 
 if __name__ == "__main__":
-    # from erniebot_agent.extensions.langchain.embeddings import ErnieEmbeddings
+    from erniebot_agent.extensions.langchain.embeddings import ErnieEmbeddings
+
     # from langchain.embeddings import HuggingFaceEmbeddings
     # from langchain.vectorstores import FAISS
     # from erniebot_agent.tools.SearchTool import SearchTool
 
-    # embeddings = ErnieEmbeddings(
-    #     aistudio_access_token=os.environ.get('EB_ACCESS_TOKEN'),
-    #     chunk_size=16,
-    #     )
+    embeddings = ErnieEmbeddings(
+        aistudio_access_token=os.environ.get("EB_ACCESS_TOKEN"),
+        chunk_size=16,
+        sleep_time=0.1,
+    )
 
     # model_kwargs = {'device': 'mps'}
     # encode_kwargs = {'normalize_embeddings': True}

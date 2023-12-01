@@ -25,6 +25,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+
 from typing import List, Optional, Union
 
 from erniebot_agent.messages import AIMessage, Message, SystemMessage
@@ -64,8 +65,8 @@ class MessageManager:
         else:
             self.messages.append(message)
 
-    def pop_message(self, idx: int = 0) -> Message:
-        return self.messages.pop(idx)
+    def pop_message(self, index: int = 0) -> Message:
+        return self.messages.pop(index)
 
     def clear_messages(self) -> None:
         self.messages = []

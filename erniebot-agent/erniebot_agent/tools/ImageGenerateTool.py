@@ -29,7 +29,7 @@ from erniebot_agent.file_io.remote_file import BOSFileClient
 from pydantic import Field
 from PIL import Image
 
-import erniebot
+import asyncio
 
 
 
@@ -50,7 +50,7 @@ def bytestr_to_png(bytestr, output_path):
     # 将图像保存为PNG格式
     image.save(output_path, format="PNG")
     print("图片已保存到：" + output_path)
-    # image.show()
+    image.show()
 
 class ImageGenerationInputView(ToolParameterView):
     prompt: str = Field(description="描述图像内容、风格的文本。例如：生成一张月亮的照片，月亮很圆。")
@@ -69,7 +69,8 @@ class ImageGenerationTool(Tool):
     ouptut_type: Type[ToolParameterView] = ImageGenerationOutputView
 
     def __init__(self) -> None:
-
+        self.file_manager = FileManager() 
+        return
         remote_file_client = BOSFileClient(
             ak="8343f27745d74e6f97c99de824cd8866",
             sk="7270c84056034bd5a112b43f952aaf34",
@@ -82,39 +83,33 @@ class ImageGenerationTool(Tool):
             API_URL, access_token="7d109d14c26a3e0e5a01f841927c30331ad07e62"
         )
         self.file_manager = FileManager(remote_file_client=remote_file_client, auto_register=True) 
-        tools =  self.toolkit.get_tools()
-        print(self.toolkit.get_tools())
         
 
     async def __call__(
         self,
         prompt: str,
-        width: Optional[int] = 512,
-        height: Optional[int] = 512,
-        image_num: Optional[int] = 1,
     ) -> bytes:
         
         tool_name = "textToImage"
        
-        text_to_image_tool = self.toolkit.get_tool(tool_name)
-        res = await text_to_image_tool(text=prompt)  # json error 补充
-        remote_file = await self.file_manager.retrieve_remote_file(res["file_id"])
-        self.file_manager.create_file_from_path
-        byte_str = await remote_file.read_content()  # TODO: transfer to image
-        await remote_file.delete()
-
+        # text_to_image_tool = self.toolkit.get_tool(tool_name)
+        # response = await text_to_image_tool(text=prompt) 
+        # result = {'file_id':response['return_file']}        
+        # return result
         # FOR MOCK
         image_path = r"/Users/tanzhehao/Documents/ERINE/text_to_image.png" 
-        image = Image.open(image_path)
+        file = await self.file_manager.create_file_from_path(file_path=image_path, file_type='local')
+        file
+        # image = Image.open(image_path)
         
-        with io.BytesIO() as byte_buffer:
-            image.save(byte_buffer,'png')  
-            byte_str = byte_buffer.getvalue()
+        # with io.BytesIO() as byte_buffer:
+        #     image.save(byte_buffer,'png')  
+        #     byte_str = byte_buffer.getvalue()
 
         # image.show()
 
-        byte_str = '/private/var/folders/gw/lbw__qt16dl3sdh_5cgv_jl00000gn/T/gradio/temp_8.png'
-        return {'return_path': byte_str}
+        result = {'file_id':file.id}       
+        return result
 
     @property
     def examples(self) -> List[Message]:
@@ -151,4 +146,5 @@ class ImageGenerationTool(Tool):
         ]
 
 if __name__ == '__main__':
-    ImageGenerationTool()
+    img_tool = ImageGenerationTool()
+    asyncio.run(img_tool("a cute dod"))

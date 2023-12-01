@@ -99,6 +99,7 @@ class ERNIEBot(ChatModel):
             If `stream` is False, returns a single message.
             If `stream` is True, returns an asynchronous iterator of message chunks.
         """
+
         cfg_dict: Dict[str, Any] = {"model": self.model, "_config_": {}}
         if self.api_type is not None:
             cfg_dict["_config_"]["api_type"] = self.api_type

@@ -16,22 +16,21 @@ import argparse
 import asyncio
 import os
 import queue
-import threading
 import time
-from typing import AsyncGenerator, List, Optional, Union
+from typing import Any, AsyncGenerator, List, Optional, Tuple, Union
 
 import gradio as gr
 from erniebot_agent.agents.base import Agent
-from erniebot_agent.agents.schema import ToolResponse
 from erniebot_agent.chat_models.erniebot import ERNIEBot
+from erniebot_agent.file_io.base import File
+from erniebot_agent.file_io.file_manager import FileManager
 from erniebot_agent.memory.sliding_window_memory import SlidingWindowMemory
 from erniebot_agent.messages import AIMessage, HumanMessage, SystemMessage
 from erniebot_agent.tools.base import Tool
-from erniebot_agent.tools.ImageGenerateTool import ImageGenerationTool
+from erniebot_agent.tools.ImageGenerateTool import (
+    ImageGenerationTool,  # 目前为remotetool，如做直接展示可以替换为yinian
+)
 from erniebot_agent.tools.tool_manager import ToolManager
-from erniebot_agent.utils.logging import logger
-
-import erniebot as eb
 
 INSTRUCTION = """你的指令是为我提供一个基于《{SCRIPT}》剧情的在线RPG游戏体验。\
 在这个游戏中，玩家将扮演《{SCRIPT}》剧情关键角色，你可以自行决定玩家的角色。\
@@ -57,82 +56,54 @@ ImageGenerationTool的入参为根据场景描述总结的图片内容：
 
 当我说游戏开始的时候，开始游戏。每次只要输出【一组】互动，【不要自己生成互动】。"""
 
-# 创建消息队列用于传递文件地址
-FILE_QUEUE: queue.Queue[ToolResponse] = queue.Queue()
-
 
 def parse_args():
     parser = argparse.ArgumentParser(prog="erniebot-RPG")
     parser.add_argument("--access-token", type=str, default=None, help="Access token to use.")
     parser.add_argument("--game", type=str, default="射雕英雄传", help="story name")
     parser.add_argument("--model", type=str, default="ernie-bot-4", help="Model name")
-    parser.add_argument(
-        "--db-dir",
-        type=str,
-        default="/Users/tanzhehao/Documents/ERINE/ERNIE-Bot-SDK/examples/douluo_index_hf",
-    )
     return parser.parse_args()
 
 
-# def run_tool(tool) -> None:
-#     # TODO 原有的tool调用方法，暂时没用到，但现有的tool调用方法无法直接完成
-#     try:
-#         generatetool = ImageGenerationTool()  # 实例化的tool需要和prompt对应
-#         generatetool # mypy报错
-#         img_byte = asyncio.run(eval(tool))
-#         all_files = os.listdir("/private/var/folders/gw/lbw__qt16dl3sdh_5cgv_jl00000gn/T/gradio/")
-
-#         # 用bytes会导致页面卡死，暂时还是使用location的方式
-#         num_png_files = 0
-#         for file in all_files:
-#             if file.endswith(".png"):
-#                 num_png_files += 1
-#         save_path = (
-#             f"/private/var/folders/gw/lbw__qt16dl3sdh_5cgv_jl00000gn/T/gradio/temp_{num_png_files+1}.png"
-#         )
-#         bytestr_to_png(img_byte, save_path)
-#         FILE_QUEUE.put(save_path)
-
-#     except Exception as e:
-#         logger.error(f"Error in eval: {e}")
-
-
-class Game_Agent(Agent):
+class GameAgent(Agent):
     def __init__(
         self,
         model: str,
         script: str,
         tools: Union[ToolManager, List[Tool]],
-        system_message: Optional[str] = None,
-        access_token: str = "",
+        system_message: Optional[SystemMessage] = None,
+        access_token: Union[str, None] = None,
         max_round: int = 3,
     ) -> None:
-        eb.api_type = "aistudio"
-        eb.access_token = os.getenv("EB_ACCESS_TOKEN") if not access_token else access_token
         self.script = script
         memory = SlidingWindowMemory(max_round)
-        super().__init__(
-            llm=ERNIEBot(model), memory=memory, tools=tools, system_message=SystemMessage(system_message)
-        )
-        logger.debug(self.memory)
-        # logger.debug(self.system_message)
-        # self.memory.msg_manager.messages = [
-        #     HumanMessage(INSTRUCTION.format(SCRIPT=self.script)),
-        #     AIMessage(content=f"好的，我将为你提供《{self.script}》沉浸式图文RPG场景体验。", function_call=None),
-        # ]
 
-    def handle_tool(self, tool_name: str, tool_args: str) -> None:
-        global FILE_QUEUE
-        save_path = asyncio.run(
-            self._async_run_tool(
-                tool_name=tool_name,
-                tool_args=tool_args,
-            )
+        super().__init__(
+            llm=ERNIEBot(model, api_type="aistudio", access_token=access_token),
+            memory=memory,
+            tools=tools,
+            system_message=system_message,
         )
-        FILE_QUEUE.put(save_path)
+        self.file_manager: FileManager = FileManager()
+
+    async def handle_tool(self, tool_name: str, tool_args: str) -> None:
+        # 创建消息队列用于传递文件地址
+        self.file_queue: queue.Queue[str] = queue.Queue()
+        tool_response = await self._async_run_tool(
+            tool_name=tool_name,
+            tool_args=tool_args,
+        )
+
+        file: File = self.file_manager.look_up_file_by_id(eval(tool_response.json)["file_id"])
+        img_byte = await file.read_contents()
+
+        import base64
+
+        base64_encoded = base64.b64encode(img_byte).decode("utf-8")
+        self.file_queue.put(base64_encoded)
 
     async def _async_run(self, prompt: str) -> AsyncGenerator:
-        """Defualt open stream for threading tool call
+        """Defualt open stream for tool call
 
         Args:
         prompt: str, the prompt for the tool
@@ -145,32 +116,26 @@ class Game_Agent(Agent):
         apply = False
         res = ""
         function_part = None
-        thread = None
+        task = None
 
         async for temp_res in response:
             for s in temp_res.content:
                 # 用缓冲区来达成一个字一个字输出的流式
                 res += s
                 time.sleep(0.005)
-                yield s, function_part, thread  # 将处理函数时需要用到的部分返回给外层函数
+                yield s, function_part, task  # 将处理函数时需要用到的部分返回给外层函数
 
-                if res.count("```") == 2 and not apply:  # TODO 判断逻辑待更改
+                if res.count("```") == 2 and not apply:  # 判断当出现两个```时，说明已经获取到函数调用部分
                     function_part = res[res.find("```") : res.rfind("```") + 3]
                     tool = eval(function_part[function_part.find("{") : function_part.rfind("}") + 1])
-                    # TODO：线程修改为异步函数
-                    # loop = asyncio.get_running_loop()
-                    # task = loop.create_task
-                    thread = threading.Thread(
-                        target=self.handle_tool, args=(tool["tool_name"], tool["tool_args"])
-                    )
-                    thread.start()
+                    loop = asyncio.get_event_loop()
+                    task = loop.create_task(self.handle_tool(tool["tool_name"], tool["tool_args"]))
                     apply = True
-        # await task
 
         self.memory.add_message(HumanMessage(prompt))
         self.memory.add_message(AIMessage(content=res, function_call=None))
 
-    def launch_gradio_demo(self) -> None:
+    def launch_gradio_demo(self, **launch_kwargs: Any) -> Any:
         with gr.Blocks() as demo:
             context_chatbot = gr.Chatbot(label=self.script, height=750)
             input_text = gr.Textbox(label="消息内容", placeholder="请输入...")
@@ -194,65 +159,41 @@ class Game_Agent(Agent):
             ).then(self._handle_gradio_stream, context_chatbot, context_chatbot)
         demo.launch()
 
-    def _handle_gradio_chat(self, user_message, history) -> tuple[str, List[tuple[str, str]]]:
+    def _handle_gradio_chat(self, user_message, history) -> Tuple[str, List[Tuple[str, str]]]:
         # 用于处理gradio的chatbot返回
         return "", history + [[user_message, None]]
 
     async def _handle_gradio_stream(self, history) -> AsyncGenerator:
         # 用于处理gradio的流式
-        global FILE_QUEUE
         bot_response = self._async_run(history[-1][0])
         history[-1][1] = ""
         async for temp_response in bot_response:
             function_part = temp_response[1]
-            thread = temp_response[2]
+            task = temp_response[2]
             history[-1][1] += temp_response[0]
             yield history
         else:
-            if thread:
-                thread.join()
-                tool_response: ToolResponse = FILE_QUEUE.get()
-                img_path = eval(tool_response.json)["return_path"]
-                img_path = img_path.strip('"')  # 去除json.dump的引号
-                logger.debug("end" + img_path)
+            if task:
+                await task
+                img_path = self.file_queue.get()
 
             if function_part:
                 history[-1][1] = history[-1][1].replace(
                     function_part,
-                    f"<img src='file={img_path}' alt='Example Image' width='400' height='300'>",
+                    f"<img src='data:image/png;base64,{img_path}' \
+                        width='400' height='300'>",
                 )
             yield history
 
 
 if __name__ == "__main__":
-    from erniebot_agent.extensions.langchain.embeddings import ErnieEmbeddings
-
-    # from langchain.embeddings import HuggingFaceEmbeddings
-    # from langchain.vectorstores import FAISS
-    # from erniebot_agent.tools.SearchTool import SearchTool
-
-    embeddings = ErnieEmbeddings(
-        aistudio_access_token=os.environ.get("EB_ACCESS_TOKEN"),
-        chunk_size=16,
-        sleep_time=0.1,
-    )
-
-    # model_kwargs = {'device': 'mps'}
-    # encode_kwargs = {'normalize_embeddings': True}
-    # embeddings = HuggingFaceEmbeddings(
-    #     model_name="shibing624/text2vec-base-chinese",
-    #     model_kwargs=model_kwargs,
-    #     # encode_kwargs=encode_kwargs,
-    # )
-
-    # db = FAISS.load_local(args.db_dir, embeddings)
-    # searchtool = SearchTool(db)
-
     args = parse_args()
-    game_system = Game_Agent(
+    access_token = os.getenv("EB_ACCESS_TOKEN")
+    game_system = GameAgent(
         model=args.model,
         script=args.game,
         tools=[ImageGenerationTool()],
-        system_message=INSTRUCTION.format(SCRIPT=args.game),
+        system_message=SystemMessage(INSTRUCTION.format(SCRIPT=args.game)),
+        access_token=access_token,
     )
     game_system.launch_gradio_demo()

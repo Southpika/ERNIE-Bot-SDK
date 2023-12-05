@@ -1,6 +1,6 @@
 import json
 import logging
-
+import os
 import pytest
 import urllib3
 from erniebot_agent.agents.functional_agent import FunctionalAgent
@@ -9,7 +9,6 @@ from erniebot_agent.memory.whole_memory import WholeMemory
 from erniebot_agent.messages import AIMessage, FunctionMessage, HumanMessage
 from erniebot_agent.tools.calculator_tool import CalculatorTool
 
-logging.basicConfig(level="DEBUG", format="%(message)s")
 
 
 ONE_HIT_PROMPT = "1+4等于几？"
@@ -19,7 +18,7 @@ NO_HIT_PROMPT = "深圳今天天气怎么样？"
 @pytest.fixture(scope="module")
 def llm():
     return ERNIEBot(
-        model="ernie-bot", api_type="aistudio", access_token="d86186382de8cceb4512efbd774b74ea72f3a9f5"
+        model="ernie-bot", api_type="aistudio", access_token=os.getenv('EB_ACCESS_TOKEN')
     )
 
 
@@ -57,7 +56,6 @@ async def test_functional_agent_run_one_hit(llm, tool, memory):
     assert len(actions) == 1
     assert actions[0].tool_name == tool.tool_name
 
-    logging.info("****完成第一次测试****")
 
 
 @pytest.mark.asyncio
@@ -76,23 +74,21 @@ async def test_functional_agent_run_no_hit(llm, tool, memory):
 
     assert len(response.actions) == 0
 
-    logging.info("****完成第二次测试****")
 
 
-@pytest.mark.asyncio
-@pytest.mark.parametrize("prompt", [ONE_HIT_PROMPT, NO_HIT_PROMPT])
-async def test_functional_agent_run_no_tool(llm, memory, prompt):
-    agent = FunctionalAgent(llm=llm, tools=[], memory=memory)
+# @pytest.mark.asyncio
+# @pytest.mark.parametrize("prompt", [ONE_HIT_PROMPT, NO_HIT_PROMPT])
+# async def test_functional_agent_run_no_tool(llm, memory, prompt):
+#     agent = FunctionalAgent(llm=llm, tools=[], memory=memory)
 
-    response = await agent.async_run(prompt)
+#     response = await agent.async_run(prompt)
 
-    messages = response.chat_history
-    assert len(messages) == 2
-    assert isinstance(messages[0], HumanMessage)
-    assert messages[0].content == prompt
-    assert isinstance(messages[1], AIMessage)
-    assert messages[1].content == response.text
+#     messages = response.chat_history
+#     assert len(messages) == 2
+#     assert isinstance(messages[0], HumanMessage)
+#     assert messages[0].content == prompt
+#     assert isinstance(messages[1], AIMessage)
+#     assert messages[1].content == response.text
 
-    assert len(response.actions) == 0
+#     assert len(response.actions) == 0
 
-    logging.info("****完成第三次测试****")

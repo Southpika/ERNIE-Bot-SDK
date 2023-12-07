@@ -14,13 +14,14 @@
 
 import argparse
 import asyncio
+import base64
 import os
 import time
 from typing import Any, AsyncGenerator, List, Optional, Tuple, Union
 
 import gradio as gr
 from erniebot_agent.agents.base import Agent
-from erniebot_agent.agents.schema import AgentFile
+from erniebot_agent.agents.schema import AgentFile, AgentResponse
 from erniebot_agent.chat_models.erniebot import ERNIEBot
 from erniebot_agent.file_io.file_manager import FileManager
 from erniebot_agent.memory.sliding_window_memory import SlidingWindowMemory
@@ -59,7 +60,7 @@ ImageGenerationTool的入参为根据场景描述总结的图片内容：
 def parse_args():
     parser = argparse.ArgumentParser(prog="erniebot-RPG")
     parser.add_argument("--access-token", type=str, default=None, help="Access token to use.")
-    parser.add_argument("--game", type=str, default="射雕英雄传", help="story name")
+    parser.add_argument("--game", type=str, default="射雕英雄传", help="Story name")
     parser.add_argument("--model", type=str, default="ernie-bot-4", help="Model name")
     return parser.parse_args()
 
@@ -86,8 +87,6 @@ class GameAgent(Agent):
         self.file_manager: FileManager = FileManager()
 
     async def handle_tool(self, tool_name: str, tool_args: str) -> str:
-        # 创建消息队列用于传递文件地址
-        # self.file_queue: queue.Queue[str] = queue.Queue()
         tool_response = await self._async_run_tool(
             tool_name=tool_name,
             tool_args=tool_args,
@@ -96,13 +95,14 @@ class GameAgent(Agent):
         agent_file: AgentFile = tool_response.files[-1]
         img_byte = await agent_file.file.read_contents()
 
-        import base64
-
         base64_encoded = base64.b64encode(img_byte).decode("utf-8")
         return base64_encoded
 
-    async def _async_run(self, prompt: str) -> AsyncGenerator:
-        """Defualt open stream for tool call
+    async def _async_run(self, prompt: str) -> AgentResponse:
+        raise RuntimeError(("Only support for stream mode, please use _async_run_stream instead."))
+
+    async def _async_run_stream(self, prompt: str) -> AsyncGenerator:
+        """default to use stream chat mode for tool call in this case
 
         Args:
         prompt: str, the prompt for the tool
@@ -121,7 +121,7 @@ class GameAgent(Agent):
             for s in temp_res.content:
                 # 用缓冲区来达成一个字一个字输出的流式
                 res += s
-                time.sleep(0.01)
+                time.sleep(0.05)
                 yield s, function_part, task  # 将处理函数时需要用到的部分返回给外层函数
 
                 if res.count("```") == 2 and not apply:  # 判断当出现两个```时，说明已经获取到函数调用部分
@@ -159,12 +159,12 @@ class GameAgent(Agent):
         demo.launch()
 
     def _handle_gradio_chat(self, user_message, history) -> Tuple[str, List[Tuple[str, str]]]:
-        # 用于处理gradio的chatbot返回
+        """Handle chatbot response and add it to history"""
         return "", history + [[user_message, None]]
 
     async def _handle_gradio_stream(self, history) -> AsyncGenerator:
-        # 用于处理gradio的流式
-        bot_response = self._async_run(history[-1][0])
+        """Handle stream response and alter history"""
+        bot_response = self._async_run_stream(history[-1][0])
         history[-1][1] = ""
         async for temp_response in bot_response:
             function_part = temp_response[1]
@@ -173,13 +173,12 @@ class GameAgent(Agent):
             yield history
         else:
             if task:
-                img_path = await task
-                # img_path = self.file_queue.get()
+                img_base64 = await task
 
             if function_part:
                 history[-1][1] = history[-1][1].replace(
                     function_part,
-                    f"<img src='data:image/png;base64,{img_path}' \
+                    f"<img src='data:image/png;base64,{img_base64}' \
                         width='400' height='300'>",
                 )
             yield history
@@ -187,7 +186,7 @@ class GameAgent(Agent):
 
 if __name__ == "__main__":
     args = parse_args()
-    access_token = os.getenv("EB_ACCESS_TOKEN")
+    access_token = args.access_token if args.access_token else os.getenv("EB_ACCESS_TOKEN")
     game_system = GameAgent(
         model=args.model,
         script=args.game,

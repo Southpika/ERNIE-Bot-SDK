@@ -87,7 +87,7 @@ class ManualAgent(Agent):
         chat_history: List[Message],
         actions: List[AgentAction],
         files: List[AgentFile],
-        tool
+        tool: Tool
     ) -> Optional[Message]:
         
         maybe_action = await self._async_plan(step_input, chat_history, tool)
@@ -100,11 +100,12 @@ class ManualAgent(Agent):
 
 
     async def _async_plan(
-        self, input_message: Message, chat_history: List[Message], tool
+        self, input_message: Message, chat_history: List[Message], tool: Tool
     ) -> Optional[AgentAction]:
         chat_history.append(input_message)
         messages = self.memory.get_messages() + chat_history
         if tool:
+            # 差一个tool_choice参数格式转化函数，按照最终实际tool_choice入参进行更改
             llm_resp = await self._async_run_llm(
                 messages=messages,
                 functions=self._tool_manager.get_tool_schemas(),
@@ -115,7 +116,7 @@ class ManualAgent(Agent):
             chat_history.append(output_message)
             # 如果output_message.function_call没有触发？
             return AgentAction(
-                tool_name=output_message.function_call["name"],  # type: ignore
+                tool_name=output_message.function_call["name"],  
                 tool_args=output_message.function_call["arguments"],
             )
         else:

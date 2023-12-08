@@ -22,13 +22,14 @@ __all__ = ["logger", "setup_logging"]
 logger = logging.getLogger("erniebot_agent")
 
 
-def handle_color_pattern(s):
-    corlor_pattern = r"\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])"
-    color_lis = re.findall(corlor_pattern, s)
-    origin_text = re.split(corlor_pattern, s)
+def _handle_color_pattern(s):
+    """Set ASCII color code into right sequence to avoid color conflict."""
+    color_pattern = r"\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])"
+    color_lis = re.findall(color_pattern, s)
+    origin_text = re.split(color_pattern, s)
 
+    # Preprocess: Split the text by ASCII color code
     idx_color, idx_text = 0, 0
-    # 把原有的字符串按颜色pattern分割为列表
     while idx_text < len(origin_text):
         if idx_text > 0 and origin_text[idx_text - 1] != "" and origin_text[idx_text] != "":
             origin_text.insert(idx_text, "")
@@ -39,8 +40,9 @@ def handle_color_pattern(s):
             origin_text[i] = color_lis[idx_color]
             idx_color += 1
 
+    # Process the wrong sequence
+    # Set the color after reset code to previous color
     stack = []
-    # 所有颜色认为是左括号，reset认为是右括号，不允许左右括号交叉
     for i in range(len(origin_text)):
         if origin_text[i] in color_lis:
             color = origin_text[i]
@@ -65,7 +67,7 @@ class ColorFormatter(logging.Formatter):
 
     def format(self, record):
         log_message = super(ColorFormatter, self).format(record)
-        log_message = handle_color_pattern(
+        log_message = _handle_color_pattern(
             self.COLORS.get(record.levelname, "") + log_message + self.COLORS["RESET"]
         )
         return log_message

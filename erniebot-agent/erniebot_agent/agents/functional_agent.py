@@ -93,6 +93,7 @@ class FunctionalAgent(Agent):
         if isinstance(maybe_action, AgentAction):
             action: AgentAction = maybe_action
             tool_resp = await self._async_run_tool(tool_name=action.tool_name, tool_args=action.tool_args)
+
             actions.append(action)
             files.extend(tool_resp.files)
             return FunctionMessage(name=action.tool_name, content=tool_resp.json)

@@ -14,24 +14,19 @@
 
 from __future__ import annotations
 
+import asyncio
 import io
 import os
 import uuid
 from typing import Dict, List, Optional, Type
 
+from erniebot_agent.file_io.file_manager import FileManager
 from erniebot_agent.messages import AIMessage, HumanMessage, Message
-from erniebot_agent.tools.base import Tool
+from erniebot_agent.tools.base import RemoteToolkit, Tool
 from erniebot_agent.tools.schema import ToolParameterView
 from erniebot_agent.utils.common import download_file, get_cache_dir
-from erniebot_agent.tools.base import RemoteToolkit
-from erniebot_agent.file_io.file_manager import FileManager
-from erniebot_agent.file_io.remote_file import BOSFileClient
-from pydantic import Field
 from PIL import Image
-
-import asyncio
-
-
+from pydantic import Field
 
 API_URL = "https://aistudio.baidu.com/bd-gpu-04/user/732872/7155718/api_serving/8080"
 
@@ -52,6 +47,7 @@ def bytestr_to_png(bytestr, output_path):
     print("图片已保存到：" + output_path)
     image.show()
 
+
 class ImageGenerationInputView(ToolParameterView):
     prompt: str = Field(description="描述图像内容、风格的文本。例如：生成一张月亮的照片，月亮很圆。")
     width: Optional[int] = Field(description="生成图片的宽度")
@@ -69,7 +65,7 @@ class ImageGenerationTool(Tool):
     ouptut_type: Type[ToolParameterView] = ImageGenerationOutputView
 
     def __init__(self) -> None:
-        self.file_manager = FileManager() 
+        self.file_manager = FileManager()
         return
         remote_file_client = BOSFileClient(
             ak="8343f27745d74e6f97c99de824cd8866",
@@ -82,33 +78,31 @@ class ImageGenerationTool(Tool):
         self.toolkit = RemoteToolkit.from_url(
             API_URL, access_token="7d109d14c26a3e0e5a01f841927c30331ad07e62"
         )
-        self.file_manager = FileManager(remote_file_client=remote_file_client, auto_register=True) 
-        
+        self.file_manager = FileManager(remote_file_client=remote_file_client, auto_register=True)
 
     async def __call__(
         self,
         prompt: str,
     ) -> bytes:
-        
         tool_name = "textToImage"
-       
+
         # text_to_image_tool = self.toolkit.get_tool(tool_name)
-        # response = await text_to_image_tool(text=prompt) 
-        # result = {'file_id':response['return_file']}        
+        # response = await text_to_image_tool(text=prompt)
+        # result = {'file_id':response['return_file']}
         # return result
         # FOR MOCK
-        image_path = r"/Users/tanzhehao/Documents/ERINE/text_to_image.png" 
-        file = await self.file_manager.create_file_from_path(file_path=image_path, file_type='local')
+        image_path = r"/Users/tanzhehao/Documents/ERINE/text_to_image.png"
+        file = await self.file_manager.create_file_from_path(file_path=image_path, file_type="local")
         file
         # image = Image.open(image_path)
-        
+
         # with io.BytesIO() as byte_buffer:
-        #     image.save(byte_buffer,'png')  
+        #     image.save(byte_buffer,'png')
         #     byte_str = byte_buffer.getvalue()
 
         # image.show()
 
-        result = {'file_id':file.id}       
+        result = {"file_id": file.id}
         return result
 
     @property
@@ -145,6 +139,8 @@ class ImageGenerationTool(Tool):
             ),
         ]
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     img_tool = ImageGenerationTool()
-    asyncio.run(img_tool("a cute dod"))
+    # asyncio.run(img_tool("a cute dod"))
+    print(img_tool.function_call_schema())

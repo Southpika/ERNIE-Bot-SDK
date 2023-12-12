@@ -24,7 +24,7 @@ from erniebot_agent.messages import Message
 from erniebot_agent.tools.base import Tool
 from erniebot_agent.utils.json import to_pretty_json
 from erniebot_agent.utils.logging import logger as default_logger
-from erniebot_agent.utils.output_style import ColorText
+from erniebot_agent.utils.output_style import ColoredText
 
 if TYPE_CHECKING:
     from erniebot_agent.agents.base import Agent
@@ -40,7 +40,7 @@ class LoggingHandler(CallbackHandler):
         logger: Optional[logging.Logger] = None,
     ) -> None:
         super().__init__()
-        self.log_max_length = log_max_length
+        ColoredText.set_global_max_length(log_max_length)
         self.open_role_color(enable_role_color)
 
         if logger is None:
@@ -52,7 +52,7 @@ class LoggingHandler(CallbackHandler):
         self.agent_info(
             "%s is about to start running with input:\n %s\n",
             agent.__class__.__name__,
-            ColorText(prompt, "user"),
+            ColoredText(prompt, "user"),
             subject="Run",
             state="Start",
         )
@@ -62,7 +62,7 @@ class LoggingHandler(CallbackHandler):
         self.agent_info(
             "%s is about to start running with input:\n%s\n",
             llm.__class__.__name__,
-            ColorText(messages),
+            ColoredText(messages),
             subject="LLM",
             state="Start",
         )
@@ -71,7 +71,7 @@ class LoggingHandler(CallbackHandler):
         self.agent_info(
             "%s finished running with output: \n%s\n",
             llm.__class__.__name__,
-            ColorText(response.message),
+            ColoredText(response.message),
             subject="LLM",
             state="End",
         )
@@ -85,8 +85,8 @@ class LoggingHandler(CallbackHandler):
         js_inputs = to_pretty_json(input_args, from_json=True)
         self.agent_info(
             "%s is about to start running with input:\n%s\n",
-            ColorText(tool.__class__.__name__, "function"),
-            ColorText(js_inputs, "function"),
+            ColoredText(tool.__class__.__name__, "function"),
+            ColoredText(js_inputs, "function"),
             subject="Tool",
             state="Start",
         )
@@ -95,8 +95,8 @@ class LoggingHandler(CallbackHandler):
         js_inputs = to_pretty_json(response.json, from_json=True)
         self.agent_info(
             "%s finished running with output:\n%s\n",
-            ColorText(tool.__class__.__name__, "function"),
-            ColorText(js_inputs, "function"),
+            ColoredText(tool.__class__.__name__, "function"),
+            ColoredText(js_inputs, "function"),
             subject="Tool",
             state="End",
         )
@@ -129,4 +129,4 @@ class LoggingHandler(CallbackHandler):
         else:
             self.role_color = {}
 
-        ColorText.set_global_role_color(self.role_color)
+        ColoredText.set_global_role_color(self.role_color)

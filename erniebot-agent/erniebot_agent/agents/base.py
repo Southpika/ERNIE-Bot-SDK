@@ -13,6 +13,7 @@
 # limitations under the License.
 
 import abc
+import base64
 import json
 from typing import Any, Dict, List, Literal, Optional, Union
 
@@ -20,6 +21,7 @@ from erniebot_agent import file_io
 from erniebot_agent.agents.callback.callback_manager import CallbackManager
 from erniebot_agent.agents.callback.default import get_default_callbacks
 from erniebot_agent.agents.callback.handlers.base import CallbackHandler
+from erniebot_agent.agents.html import IMG_HTML
 from erniebot_agent.agents.schema import (
     AgentFile,
     AgentResponse,
@@ -106,6 +108,7 @@ class Agent(BaseAgent):
             ) from None
 
         raw_messages = []
+        self.use_file = []
 
         def _pre_chat(text, history):
             history.append([text, None])
@@ -115,8 +118,37 @@ class Agent(BaseAgent):
             prompt = history[-1][0]
             if len(prompt) == 0:
                 raise gr.Error("Prompt should not be empty.")
-            response = await self.async_run(prompt)
-            history[-1][1] = response.text
+
+            if self.use_file:
+                response = await self.async_run(prompt, files=self.use_file)
+                self.use_file = []
+            else:
+                response = await self.async_run(prompt)
+
+            # TODO:添加判断为图片的逻辑，添加如果结果中不含fileid 拼接在最后的逻辑
+            if (
+                response.files
+                and response.files[-1].type == "output"
+                and response.files[-1].used_by == response.actions[-1].tool_name
+            ):
+                output_file_id = response.files[-1].file.id
+                if output_file_id in response.text:
+                    output_file = self._file_manager.look_up_file_by_id(output_file_id)
+
+                    img_content = await output_file.read_contents()
+                    if isinstance(img_content, bytes):
+                        base64_encoded = base64.b64encode(img_content).decode("utf-8")
+                    elif isinstance(img_content, str):
+                        base64_encoded = img_content
+
+                output_result = response.text
+                output_result = output_result.replace(
+                    output_file_id, f'<img src="data:image/png;base64,{base64_encoded}" />'
+                )
+            else:
+                output_result = response.text
+
+            history[-1][1] = output_result
             raw_messages.extend(response.chat_history)
             return (
                 history,
@@ -132,6 +164,31 @@ class Agent(BaseAgent):
             self.reset_memory()
             return None, None, None, None
 
+        async def _upload(file_location: Union[List[str], str]):
+            gr.Info("Upload Succeeded!")
+            if isinstance(file_location, str):
+                upload_file = await self._file_manager.create_file_from_path(file_location)
+                self.use_file.append(upload_file)
+                size = 1
+            else:
+                for single_file_path in file_location:
+                    upload_file = await self._file_manager.create_file_from_path(single_file_path)
+                    self.use_file.append(upload_file)
+                size = len(file_location)
+
+            output_lis = self._file_manager._file_registry.list_files()
+            item = ""
+            for i in range(len(output_lis) - size):
+                item += f'<li>{str(output_lis[i]).strip("<>")}</li>'
+
+            # The file uploaded this time will gathered and colored
+            item += "<li>"
+            for i in range(size, 0, -1):
+                item += f'{str(output_lis[len(output_lis)-i]).strip("<>")}<br>'
+            item += "</li>"
+
+            return IMG_HTML.format(ITEM=item)
+
         def _messages_to_dicts(messages):
             return [message.to_dict() for message in messages]
 
@@ -146,11 +203,21 @@ class Agent(BaseAgent):
                         {"left": "$", "right": "$", "display": False},
                     ],
                     bubble_full_width=False,
+                    height=700,
                 )
-                prompt_textbox = gr.Textbox(label="Prompt", placeholder="Write a prompt here...")
+
                 with gr.Row():
-                    submit_button = gr.Button("Submit")
-                    clear_button = gr.Button("Clear")
+                    prompt_textbox = gr.Textbox(
+                        label="Prompt", placeholder="Write a prompt here...", scale=15
+                    )
+                    submit_button = gr.Button("Submit", min_width=150)
+                    with gr.Column(min_width=100):
+                        clear_button = gr.Button("Clear", min_width=100)
+                        file_button = gr.UploadButton("Upload", min_width=100, file_count="multiple")
+
+                with gr.Accordion("Files", open=True):
+                    file_lis = self._file_manager._file_registry.list_files()
+                    all_files = gr.HTML(value=file_lis, label="All input files")
                 with gr.Accordion("Tools", open=False):
                     attached_tools = self._tool_manager.get_tools()
                     tool_descriptions = [tool.function_call_schema() for tool in attached_tools]
@@ -158,6 +225,7 @@ class Agent(BaseAgent):
                 with gr.Accordion("Raw messages", open=False):
                     all_messages_json = gr.JSON(label="All messages")
                     agent_memory_json = gr.JSON(label="Messges in memory")
+
             prompt_textbox.submit(
                 _pre_chat,
                 inputs=[prompt_textbox, chatbot],
@@ -197,6 +265,11 @@ class Agent(BaseAgent):
                     agent_memory_json,
                 ],
             )
+            file_button.upload(
+                _upload,
+                inputs=file_button,
+                outputs=[all_files],
+            )
 
         demo.launch(**launch_kwargs)
 
@@ -232,6 +305,10 @@ class Agent(BaseAgent):
         # or can we have the tools introspect about this?
         input_files = await self._sniff_and_extract_files_from_args(parsed_tool_args, tool, "input")
         tool_ret = await tool(**parsed_tool_args)
+        breakpoint()
+        if isinstance(tool_ret, dict):
+            tool_ret["prompt"] = "请你把FileID，如file-开头的字符串当作是文件内容"
+
         output_files = await self._sniff_and_extract_files_from_args(tool_ret, tool, "output")
         tool_ret_json = json.dumps(tool_ret, ensure_ascii=False)
         return ToolResponse(json=tool_ret_json, files=input_files + output_files)
@@ -256,6 +333,8 @@ class Agent(BaseAgent):
         self, args: Dict[str, Any], tool: Tool, file_type: Literal["input", "output"]
     ) -> List[AgentFile]:
         agent_files: List[AgentFile] = []
+        if not isinstance(args, dict):
+            raise RuntimeError("Tool Response Error")
         for val in args.values():
             if isinstance(val, str):
                 if is_local_file_id(val):

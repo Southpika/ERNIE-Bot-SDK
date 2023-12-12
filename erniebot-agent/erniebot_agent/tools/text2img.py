@@ -68,16 +68,17 @@ async def main():
 
     import erniebot
 
-    erniebot.api_type = "aistudio"
-    erniebot.access_token = os.getenv("EB_ACCESS_TOKEN")
-    tool = ImageGenerateTool()
-    llm = ERNIEBot(model="ernie-bot")
-    memory = WholeMemory()
-    agent = FunctionalAgent(llm=llm, tools=[tool], memory=memory)
-    query = "画一张寺庙的图，里面有很多长老"
-    response = await agent.async_run(query)
-    print(response)
+    # erniebot.api_type = "aistudio"
+    # erniebot.access_token = os.getenv("EB_ACCESS_TOKEN")
+    # tool = ImageGenerateTool()
+    # llm = ERNIEBot(model="ernie-bot")
+    # memory = WholeMemory()
+    # agent = FunctionalAgent(llm=llm, tools=[tool], memory=memory)
+    # query = "画一张寺庙的图，里面有很多长老"
+    # response = await agent.async_run(query)
+    # print(response)
 
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    # asyncio.run(main())
+    print(ImageGenerateTool().function_call_schema())

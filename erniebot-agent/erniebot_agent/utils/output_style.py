@@ -21,9 +21,9 @@ if TYPE_CHECKING:
 
 from erniebot_agent.utils.json import to_pretty_json
 
-__all__ = ["ColorText"]
+__all__ = ["ColoredText"]
 
-COLORS = {
+_COLORS = {
     "Purple": "\033[95m",
     "Green": "\033[92m",
     "Yellow": "\033[93m",
@@ -34,8 +34,9 @@ COLORS = {
 }
 
 
-class ColorText:
+class ColoredText:
     role_color: dict
+    max_length: int
 
     def __init__(self, text: Union[str, Message, List[Message]], role: Optional[str] = None):
         self.text = text
@@ -45,8 +46,12 @@ class ColorText:
         return str(self.text)
 
     @classmethod
-    def set_global_role_color(cls, value):
+    def set_global_role_color(cls, value: dict):
         cls.role_color = value
+
+    @classmethod
+    def set_global_max_length(cls, max_length: int):
+        cls.max_length = max_length
 
     def get_colored_text(self):
         if isinstance(self.text, str):
@@ -55,18 +60,17 @@ class ColorText:
             return self.colorize_msg(self.text, self.role_color)
 
     def colorize_text(self, text: str, color: Optional[str]) -> str:
-        if color is not None and color not in COLORS:
-            color_keys = list(COLORS.keys())
+        if color is not None and color not in _COLORS:
+            color_keys = list(_COLORS.keys())
             raise ValueError("Only support colors: " + ", ".join(str(key) for key in color_keys))
 
         if not color:
             return text
         else:
-            return COLORS[color] + str(text) + COLORS["RESET"]
+            return _COLORS[color] + str(text) + _COLORS["RESET"]
 
-    def colorize_msg(
-        self, message: Union[Message, List[Message]], role_color: dict, max_length: int = 100
-    ) -> str:
+    def colorize_msg(self, message: Union[Message, List[Message]], role_color: dict) -> str:
+        max_length = self.max_length if self.max_length else 100
         res = ""
         if isinstance(message, list):
             for msg in message:
@@ -87,7 +91,7 @@ class ColorText:
             if v:
                 possible_color = role_color.get(msg.role)
                 if possible_color:
-                    res += f" {k}: {COLORS[possible_color]}{v}{COLORS['RESET']} \n"
+                    res += f" {k}: {_COLORS[possible_color]}{v}{_COLORS['RESET']} \n"
                 else:
                     res += f" {k}: {v} \n"
 

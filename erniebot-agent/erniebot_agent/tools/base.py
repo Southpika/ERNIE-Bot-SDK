@@ -25,7 +25,7 @@ from functools import wraps
 from typing import Any, Dict, List, Optional, Type
 
 import requests
-from erniebot_agent import file_io
+from erniebot_agent.file_io import get_file_manager
 from erniebot_agent.file_io.base import File
 from erniebot_agent.file_io.file_manager import FileManager
 from erniebot_agent.messages import AIMessage, FunctionCall, HumanMessage, Message
@@ -37,6 +37,7 @@ from erniebot_agent.tools.schema import (
     scrub_dict,
 )
 from erniebot_agent.utils.common import get_file_suffix, is_json_response
+from erniebot_agent.utils.exception import RemoteToolError
 from erniebot_agent.utils.http import url_file_exists
 from erniebot_agent.utils.logging import logger
 from openapi_spec_validator import validate
@@ -66,6 +67,16 @@ def validate_openapi_yaml(yaml_file: str) -> bool:
 
 
 class BaseTool(ABC):
+    @property
+    @abstractmethod
+    def tool_name(self) -> str:
+        raise NotImplementedError
+
+    @property
+    @abstractmethod
+    def examples(self) -> List[Message]:
+        raise NotImplementedError
+
     @abstractmethod
     async def __call__(self, *args: Any, **kwds: Any) -> Any:
         raise NotImplementedError
@@ -75,7 +86,9 @@ class BaseTool(ABC):
         raise NotImplementedError
 
 
-def get_file_names_from_param_view(param_view: Optional[Type[ToolParameterView]] = None) -> List[str]:
+def get_file_info_from_param_view(
+    param_view: Optional[Type[ToolParameterView]] = None,
+) -> Dict[str, Dict[str, str]]:
     """get file names from tool parameter view
 
     Args:
@@ -85,48 +98,95 @@ def get_file_names_from_param_view(param_view: Optional[Type[ToolParameterView]]
         List[str]: the names of file
     """
     if param_view is None:
-        return []
-    file_names = []
+        return {}
+
+    file_infos = {}
     for key in param_view.model_fields.keys():
-        if param_view.model_fields[key].json_schema_extra and param_view.model_fields[
-            key
-        ].json_schema_extra.get("format", None) in [
+        json_schema_extra = param_view.model_fields[key].json_schema_extra
+        if json_schema_extra and json_schema_extra.get("format", None) in [
             "byte",
             "binary",
         ]:
-            file_names.append(key)
-    return file_names
+            file_infos[key] = deepcopy(json_schema_extra)
+    return file_infos
 
 
 async def parse_file_from_response(
-    response: Response, file_manager: FileManager, file_names: List[str]
+    response: Response,
+    file_manager: FileManager,
+    file_infos: Dict[str, Dict[str, str]],
+    file_metadata: Dict[str, str],
 ) -> Optional[File]:
-    content_type = response.headers.get("Content-Type", None)
-
-    # TODO(wj-Mcat): to parse base64 file from json response
-    if len(file_names) == 0:
-        return None
-
     if is_json_response(response):
-        return None
+        if len(file_infos) == 0:
+            return None
 
-    # 1. parse file by content_type
-    if content_type is not None:
-        file_suffix = get_file_suffix(content_type)
+        file_name = list(file_infos.keys())[0]
+        # parse from body
+        content = response.json()[file_name]
+        format, mime_type = (
+            file_infos[file_name]["format"],
+            file_infos[file_name]["x-ebagent-file-mime-type"],
+        )
+        if format == "byte":
+            content = base64.b64decode(content)
+
+        file_suffix = get_file_suffix(mime_type)
         return await file_manager.create_file_from_bytes(
-            response.content, f"tool{file_suffix}", file_purpose="assistants_output"
+            content, f"tool-{file_suffix}", file_purpose="assistants_output", file_metadata=file_metadata
         )
 
-    # 2. parse file by
+    # 1. parse file by `Content-Disposition`
     content_disposition = response.headers.get("Content-Disposition", None)
     if content_disposition is not None:
         file_name = response.headers["Content-Disposition"].split("filename=")[1]
         local_file = await file_manager.create_file_from_bytes(
-            response.content, file_name, file_purpose="assistants_output"
+            response.content, file_name, file_purpose="assistants_output", file_metadata=file_metadata
         )
         return local_file
 
-    raise ValueError("can not parse file from response")
+    # 2. parse file from file_mimetypes
+    if len(file_infos) > 1:
+        raise RemoteToolError(
+            "Multiple file MIME types are defined in the Response Schema. Currently, only single "
+            "file output is supported. Please ensure that only one file MIME type is defined in "
+            "the Response Schema.",
+            stage="Output parsing",
+        )
+
+    if len(file_infos) == 1:
+        file_name = list(file_infos.keys())[0]
+        file_mimetype = file_infos[file_name].get("x-ebagent-file-mime-type", None)
+        if file_mimetype is not None:
+            file_suffix = get_file_suffix(file_mimetype)
+            return await file_manager.create_file_from_bytes(
+                response.content,
+                f"tool-{file_suffix}",
+                file_purpose="assistants_output",
+                file_metadata=file_metadata,
+            )
+
+    # 3. parse file by content_type
+    content_type = response.headers.get("Content-Type", None)
+    if content_type is not None:
+        file_suffix = get_file_suffix(content_type)
+        return await file_manager.create_file_from_bytes(
+            response.content,
+            f"tool-{file_suffix}",
+            file_purpose="assistants_output",
+            file_metadata=file_metadata,
+        )
+
+    if is_json_response(response):
+        raise RemoteToolError(
+            "Can not parse file from response: the type of data from response is json",
+            stage="Output parsing",
+        )
+    raise RemoteToolError(
+        "Can not parse file from response: the type of data from response is not json, "
+        "and can not find `Content-Disposition` or `Content-Type` field from response header.",
+        stage="Output parsing",
+    )
 
 
 class Tool(BaseTool, ABC):
@@ -183,9 +243,17 @@ def wrap_tool_with_files(func):
 
         file_manager = object.file_manager
         # 1. replace fileid with byte string
-        parameter_file_names = get_file_names_from_param_view(object.tool_view.parameters)
+        parameter_file_info = get_file_info_from_param_view(object.tool_view.parameters)
         for key in tool_arguments.keys():
-            if key not in parameter_file_names:
+            if object.tool_view.parameters:
+                if key not in object.tool_view.parameters.model_fields:
+                    keys = list(object.tool_view.parameters.model_fields.keys())
+                    raise RemoteToolError(
+                        f"`{object.tool_name}` received unexpected arguments `{key}`. "
+                        f"The avaiable arguments are {keys}",
+                        stage="Input parsing",
+                    )
+            if key not in parameter_file_info:
                 continue
             if object.tool_view.parameters is None:
                 break
@@ -206,22 +274,24 @@ class RemoteTool(BaseTool):
         server_url: str,
         headers: dict,
         version: str,
+        file_manager: FileManager,
         examples: Optional[List[Message]] = None,
         tool_name_prefix: Optional[str] = None,
-        file_manager: Optional[FileManager] = None,
     ) -> None:
         self.tool_view = tool_view
         self.server_url = server_url
         self.headers = headers
         self.version = version
-        self.examples = examples
+        self.file_manager = file_manager
+        self._examples = examples
         self.tool_name_prefix = tool_name_prefix
         # If `tool_name_prefix`` is provided, we prepend `tool_name_prefix`` to the `name` field of all tools
         if tool_name_prefix is not None:
             self.tool_view.name = f"{self.tool_name_prefix}/{self.tool_view.name}"
-        if file_manager is None:
-            file_manager = file_io.get_file_manager()
-        self.file_manager = file_manager
+
+    @property
+    def examples(self) -> List[Message]:
+        return self._examples or []
 
     def __str__(self) -> str:
         return "<name: {0}, server_url: {1}, description: {2}>".format(
@@ -245,15 +315,19 @@ class RemoteTool(BaseTool):
         requests_inputs = {
             "headers": headers,
         }
-
         if self.tool_view.method == "get":
             requests_inputs["params"] = tool_arguments
         elif self.tool_view.parameters_content_type == "application/json":
             requests_inputs["json"] = tool_arguments
-        elif self.tool_view.parameters_content_type == "application/x-www-form-urlencoded":
+        elif self.tool_view.parameters_content_type in [
+            "application/x-www-form-urlencoded",
+            "multipart/form-data",
+        ]:
             requests_inputs["data"] = tool_arguments
         else:
-            raise ValueError(f"Unsupported content type: {self.tool_view.parameters_content_type}")
+            raise RemoteToolError(
+                f"Unsupported content type: {self.tool_view.parameters_content_type}", stage="Executing"
+            )
 
         if self.tool_view.method == "get":
             response = requests.get(url, **requests_inputs)  # type: ignore
@@ -264,37 +338,44 @@ class RemoteTool(BaseTool):
         elif self.tool_view.method == "delete":
             response = requests.delete(url, **requests_inputs)  # type: ignore
         else:
-            raise ValueError(f"method<{self.tool_view.method}> is invalid")
+            raise RemoteToolError(f"method<{self.tool_view.method}> is invalid", stage="Executing")
 
         breakpoint()
         if response.status_code != 200:
             logger.debug(f"The resource requested returned the following headers: {response.headers}")
-            raise ValueError(
+            raise RemoteToolError(
                 f"The resource requested by `{self.tool_name}` "
-                f"returned {response.status_code}: {response.text}"
+                f"returned {response.status_code}: {response.text}",
+                stage="Executing",
             )
 
         # parse the file from response
-        returns_file_names = get_file_names_from_param_view(self.tool_view.returns)
-        file = await parse_file_from_response(response, self.file_manager, file_names=returns_file_names)
+        returns_file_infos = get_file_info_from_param_view(self.tool_view.returns)
+        file_metadata = {"tool_name": self.tool_name}
+        file = await parse_file_from_response(
+            response, self.file_manager, file_infos=returns_file_infos, file_metadata=file_metadata
+        )
 
         if file is not None:
-            if len(returns_file_names) == 0:
-                raise ValueError("Can not find file field defination in openapi.yaml")
+            if len(returns_file_infos) == 0:
+                return {self.tool_view.returns_ref_uri: file.id}
 
-            return {returns_file_names[0]: file.id}
+            file_name = list(returns_file_infos.keys())[0]
+            return {file_name: file.id}
 
-        if len(returns_file_names) == 0:
+        if len(returns_file_infos) == 0:
             return response.json()
-        elif len(returns_file_names) != 1:
-            raise NotImplementedError("The tool returns multiple files, which is not supported for now")
 
-        # TODO(wj-Mcat): handle more complex file situations
+        raise RemoteToolError(
+            f"<{list(returns_file_infos.keys())}> are defined but cannot be processed from the "
+            "response. Please ensure that the response headers contain either the Content-Disposition "
+            "or Content-Type field.",
+            stage="Output parsing",
+        )
 
     def function_call_schema(self) -> dict:
         schema = self.tool_view.function_call_schema()
-        if self.examples is not None:
-            schema["examples"] = [example.to_dict() for example in self.examples]
+        schema["examples"] = [example.to_dict() for example in self.examples]
 
         return schema or {}
 
@@ -307,6 +388,7 @@ class RemoteToolkit:
     info: EndpointInfo
     servers: List[Endpoint]
     paths: List[RemoteToolView]
+    file_manager: FileManager
 
     component_schemas: dict[str, Type[ToolParameterView]]
     headers: dict
@@ -326,6 +408,7 @@ class RemoteToolkit:
                 self.servers[0].url,
                 self.headers,
                 self.info.version,
+                file_manager=self.file_manager,
                 examples=self.get_examples_by_name(path.name),
                 tool_name_prefix=self.tool_name_prefix,
             )
@@ -379,12 +462,22 @@ class RemoteToolkit:
 
     def get_tool(self, tool_name: str) -> RemoteTool:
         paths = [path for path in self.paths if path.name == tool_name]
-        assert len(paths) == 1, f"tool<{tool_name}> not found in paths"
+        if len(paths) == 0:
+            raise RemoteToolError(
+                f"`{tool_name}` not found under RemoteToolkit `{self.tool_name_prefix}`", stage="Loading"
+            )
+        elif len(paths) > 1:
+            raise RemoteToolError(
+                f"Found duplicate `{tool_name}` under RemoteToolkit `{self.tool_name_prefix}`",
+                stage="Loading",
+            )
+
         return RemoteTool(
             paths[0],
             self.servers[0].url,
             self.headers,
             self.info.version,
+            file_manager=self.file_manager,
             examples=self.get_examples_by_name(tool_name),
             tool_name_prefix=self.tool_name_prefix,
         )
@@ -417,7 +510,10 @@ class RemoteToolkit:
 
     @classmethod
     def from_openapi_dict(
-        cls, openapi_dict: Dict[str, Any], access_token: Optional[str] = None
+        cls,
+        openapi_dict: Dict[str, Any],
+        access_token: Optional[str] = None,
+        file_manager: Optional[FileManager] = None,
     ) -> RemoteToolkit:
         info = EndpointInfo(**openapi_dict["info"])
         servers = [Endpoint(**server) for server in openapi_dict.get("servers", [])]
@@ -443,6 +539,9 @@ class RemoteToolkit:
                     )
                 )
 
+        if file_manager is None:
+            file_manager = get_file_manager(access_token)
+
         return RemoteToolkit(
             openapi=openapi_dict["openapi"],
             info=info,
@@ -450,10 +549,13 @@ class RemoteToolkit:
             paths=paths,
             component_schemas=fields,
             headers=cls._get_authorization_headers(access_token),
-        )  # type: ignore
+            file_manager=file_manager,
+        )
 
     @classmethod
-    def from_openapi_file(cls, file: str, access_token: Optional[str] = None) -> RemoteToolkit:
+    def from_openapi_file(
+        cls, file: str, access_token: Optional[str] = None, file_manager: Optional[FileManager] = None
+    ) -> RemoteToolkit:
         """only support openapi v3.0.1
 
         Args:
@@ -461,10 +563,10 @@ class RemoteToolkit:
             access_token (Optional[str]): the path of openapi yaml file
         """
         if not validate_openapi_yaml(file):
-            raise ValueError(f"invalid openapi yaml file: {file}")
+            raise RemoteToolError(f"invalid openapi yaml file: {file}", stage="Loading")
 
         spec_dict, _ = read_from_filename(file)
-        return cls.from_openapi_dict(spec_dict, access_token=access_token)
+        return cls.from_openapi_dict(spec_dict, access_token=access_token, file_manager=file_manager)
 
     @classmethod
     def _get_authorization_headers(cls, access_token: Optional[str]) -> dict:
@@ -480,7 +582,11 @@ class RemoteToolkit:
 
     @classmethod
     def from_url(
-        cls, url: str, version: Optional[str] = None, access_token: Optional[str] = None
+        cls,
+        url: str,
+        version: Optional[str] = None,
+        access_token: Optional[str] = None,
+        file_manager: Optional[FileManager] = None,
     ) -> RemoteToolkit:
         # 1. download openapy.yaml file to temp directory
         if not url.endswith("/"):
@@ -494,17 +600,21 @@ class RemoteToolkit:
             response = requests.get(openapi_yaml_url, headers=cls._get_authorization_headers(access_token))
             if response.status_code != 200:
                 logger.debug(f"The resource requested returned the following headers: {response.headers}")
-                raise ValueError(f"`{openapi_yaml_url}` returned {response.status_code}: {response.text}")
+                raise RemoteToolError(
+                    f"`{openapi_yaml_url}` returned {response.status_code}: {response.text}", stage="Loading"
+                )
 
             file_content = response.content.decode("utf-8")
             if not file_content.strip():
-                raise ValueError(f"the content is empty from: {openapi_yaml_url}")
+                raise RemoteToolError(f"the content is empty from: {openapi_yaml_url}", stage="Loading")
 
             file_path = os.path.join(temp_dir, "openapi.yaml")
             with open(file_path, "w+", encoding="utf-8") as f:
                 f.write(file_content)
 
-            toolkit = RemoteToolkit.from_openapi_file(file_path, access_token=access_token)
+            toolkit = RemoteToolkit.from_openapi_file(
+                file_path, access_token=access_token, file_manager=file_manager
+            )
             for server in toolkit.servers:
                 server.url = url
 
@@ -530,11 +640,14 @@ class RemoteToolkit:
             response = requests.get(examples_yaml_url, headers=cls._get_authorization_headers(access_token))
             if response.status_code != 200:
                 logger.debug(f"The resource requested returned the following headers: {response.headers}")
-                raise ValueError(f"`{examples_yaml_url}` returned {response.status_code}: {response.text}")
+                raise RemoteToolError(
+                    f"`{examples_yaml_url}` returned {response.status_code}: {response.text}",
+                    stage="Loading",
+                )
 
             file_content = response.content.decode("utf-8")
             if not file_content.strip():
-                raise ValueError(f"the content is empty from: {examples_yaml_url}")
+                raise RemoteToolError(f"the content is empty from: {examples_yaml_url}", stage="Loading")
 
             file_path = os.path.join(temp_dir, "examples.yaml")
             with open(file_path, "w+", encoding="utf-8") as f:
@@ -568,7 +681,7 @@ class RemoteToolkit:
                         }  # type: ignore
                     messages.append(AIMessage("", function_call=function_call))
                 else:
-                    raise ValueError(f"invald role: <{example['role']}>")
+                    raise RemoteToolError(f"invald role: <{example['role']}>", stage="Loading")
         return messages
 
     @classmethod
@@ -583,7 +696,7 @@ class RemoteToolkit:
         """
         content: dict = read_from_filename(file)[0]
         if len(content) == 0 or "examples" not in content:
-            raise ValueError("invalid examples configuration file")
+            raise RemoteToolError("invalid examples configuration file", stage="Loading")
         return cls.load_examples_dict(content)
 
     def function_call_schemas(self) -> List[dict]:

@@ -12,9 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from erniebot_agent import messages
 from erniebot_agent.utils.logging import logger, setup_logging
 
 __all__ = ["logger"]
 
-setup_logging('INFO')
-logger.info('load erniebot_agent package')
+setup_logging()

@@ -70,7 +70,7 @@ class ColoredText:
             return _COLORS[color] + str(text) + _COLORS["RESET"]
 
     def colorize_msg(self, message: Union[Message, List[Message]], role_color: dict) -> str:
-        max_length = self.max_length if self.max_length else 100
+        max_length = self.max_length if self.max_length else 150
         res = ""
         if isinstance(message, list):
             for msg in message:

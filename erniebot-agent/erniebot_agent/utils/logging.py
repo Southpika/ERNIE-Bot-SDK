@@ -17,14 +17,11 @@ from __future__ import annotations
 import logging
 import os
 import re
-from typing import TYPE_CHECKING, List, Optional, Union
+from typing import List, Optional, Union
 
-from erniebot_agent import messages
+from erniebot_agent.messages import FunctionMessage, Message
 from erniebot_agent.utils.json import to_pretty_json
 from erniebot_agent.utils.output_style import ColoredText
-
-if TYPE_CHECKING:
-    from erniebot_agent.messages import Message
 
 __all__ = ["logger", "setup_logging"]
 
@@ -112,7 +109,7 @@ class FileFormatter(logging.Formatter):
             chat_lis = []
             func_lis = []
             for i in range(len(text)):
-                if isinstance(text[i], messages.Message):
+                if isinstance(text[i], Message):
                     chat_res, func_res = self.handle_message(text[i])
                     chat_lis.append(chat_res)
                     if func_res:
@@ -132,7 +129,7 @@ class FileFormatter(logging.Formatter):
                 output.append({"function_call": [func_res]})
 
     def handle_message(self, message):
-        if message.role == "function":
+        if isinstance(message, FunctionMessage):
             func_dict = {
                 "name": message.name,
                 "arguments": message.content,

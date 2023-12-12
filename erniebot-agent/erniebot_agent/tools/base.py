@@ -340,7 +340,7 @@ class RemoteTool(BaseTool):
         else:
             raise RemoteToolError(f"method<{self.tool_view.method}> is invalid", stage="Executing")
 
-        breakpoint()
+
         if response.status_code != 200:
             logger.debug(f"The resource requested returned the following headers: {response.headers}")
             raise RemoteToolError(

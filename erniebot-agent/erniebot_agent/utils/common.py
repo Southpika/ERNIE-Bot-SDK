@@ -64,3 +64,17 @@ def is_base64_string(string: str) -> bool:
         return base64.b64encode(base64.b64decode(string)) == string
     except Exception:
         return False
+
+def get_file_type(file_name: str) -> str:
+    if '.' not in file_name:
+        raise ValueError("file_name should contain suffix")
+    
+    picture_pattern = set('jpg', 'png', 'jpeg')
+    audio_pattern = set('mp3', 'wav')
+    video_pattern = set('mp4', 'avi')
+    if file_name.split('.')[-1] in picture_pattern:
+        return 'picture'
+    elif file_name.split('.')[-1] in audio_pattern:
+        return 'audio'
+    elif file_name.split('.')[-1] in video_pattern:
+        return 'video'

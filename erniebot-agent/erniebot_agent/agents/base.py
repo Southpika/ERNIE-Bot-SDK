@@ -21,7 +21,7 @@ from erniebot_agent import file_io
 from erniebot_agent.agents.callback.callback_manager import CallbackManager
 from erniebot_agent.agents.callback.default import get_default_callbacks
 from erniebot_agent.agents.callback.handlers.base import CallbackHandler
-from erniebot_agent.agents.html import IMG_HTML
+from erniebot_agent.utils.html_format import ITEM_LIST_HTML, IMAGE_HTML
 from erniebot_agent.agents.schema import (
     AgentFile,
     AgentResponse,
@@ -37,7 +37,7 @@ from erniebot_agent.messages import Message, SystemMessage
 from erniebot_agent.tools.base import BaseTool
 from erniebot_agent.tools.tool_manager import ToolManager
 from erniebot_agent.utils.logging import logger
-
+from erniebot_agent.utils.common import get_file_type
 
 class BaseAgent(metaclass=abc.ABCMeta):
     @abc.abstractmethod
@@ -133,19 +133,21 @@ class Agent(BaseAgent):
                 and response.files[-1].used_by == response.actions[-1].tool_name
             ):
                 output_file_id = response.files[-1].file.id
+                output_file = self._file_manager.look_up_file_by_id(output_file_id)
+                img_content = await output_file.read_contents()
+                base64_encoded = base64.b64encode(img_content).decode("utf-8")
                 if output_file_id in response.text:
-                    output_file = self._file_manager.look_up_file_by_id(output_file_id)
-
-                    img_content = await output_file.read_contents()
-                    if isinstance(img_content, bytes):
-                        base64_encoded = base64.b64encode(img_content).decode("utf-8")
-                    elif isinstance(img_content, str):
-                        base64_encoded = img_content
-
-                output_result = response.text
-                output_result = output_result.replace(
-                    output_file_id, f'<img src="data:image/png;base64,{base64_encoded}" />'
-                )
+                    output_result = response.text
+                    output_result = output_result.replace(
+                        output_file_id, IMAGE_HTML.format(
+                            BASE64_ENCODED=base64_encoded, 
+                            IMG_LOCATION=None
+                            )
+                    )
+                else:
+                    output_result = response.text
+                    history[-1][1] = output_result
+                    
             else:
                 output_result = response.text
 
@@ -165,30 +167,26 @@ class Agent(BaseAgent):
             self.reset_memory()
             return None, None, None, None
 
-        async def _upload(file_location: Union[List[str], str]):
-            gr.Info("Upload Succeeded!")
-            if isinstance(file_location, str):
-                upload_file = await self._file_manager.create_file_from_path(file_location)
-                self.use_file.append(upload_file)
-                size = 1
-            else:
-                for single_file_path in file_location:
-                    upload_file = await self._file_manager.create_file_from_path(single_file_path)
-                    self.use_file.append(upload_file)
-                size = len(file_location)
+        async def _upload(file: gr.utils.NamedString, history:list):
 
+            for single_file in file:
+                upload_file = await self._file_manager.create_file_from_path(single_file.name)
+                self.use_file.append(upload_file)
+                history = history + [((single_file.name,),None)]
+            size = len(file)
+                   
             output_lis = self._file_manager._file_registry.list_files()
             item = ""
             for i in range(len(output_lis) - size):
                 item += f'<li>{str(output_lis[i]).strip("<>")}</li>'
 
-            # The file uploaded this time will gathered and colored
+            # The file uploaded this time will be gathered and colored
             item += "<li>"
             for i in range(size, 0, -1):
                 item += f'{str(output_lis[len(output_lis)-i]).strip("<>")}<br>'
             item += "</li>"
 
-            return IMG_HTML.format(ITEM=item)
+            return ITEM_LIST_HTML.format(ITEM=item), history
 
         def _messages_to_dicts(messages):
             return [message.to_dict() for message in messages]
@@ -214,9 +212,14 @@ class Agent(BaseAgent):
                     submit_button = gr.Button("Submit", min_width=150)
                     with gr.Column(min_width=100):
                         clear_button = gr.Button("Clear", min_width=100)
-                        file_button = gr.UploadButton("Upload", min_width=100, file_count="multiple")
+                        file_button = gr.UploadButton(
+                            "Upload", 
+                            min_width=100,
+                            file_count="multiple",
+                            file_types=["image", "video", "audio"]
+                            )
 
-                with gr.Accordion("Files", open=True):
+                with gr.Accordion("Files", open=False):
                     file_lis = self._file_manager._file_registry.list_files()
                     all_files = gr.HTML(value=file_lis, label="All input files")
                 with gr.Accordion("Tools", open=False):
@@ -268,8 +271,8 @@ class Agent(BaseAgent):
             )
             file_button.upload(
                 _upload,
-                inputs=file_button,
-                outputs=[all_files],
+                inputs=[file_button,chatbot],
+                outputs=[all_files, chatbot],
             )
 
         demo.launch(**launch_kwargs)
@@ -306,11 +309,9 @@ class Agent(BaseAgent):
         # or can we have the tools introspect about this?
         input_files = await self._sniff_and_extract_files_from_args(parsed_tool_args, tool, "input")
         tool_ret = await tool(**parsed_tool_args)
-        breakpoint()
-        if isinstance(tool_ret, dict):
-            tool_ret["prompt"] = "请你把FileID，如file-开头的字符串当作是文件内容"
-
         output_files = await self._sniff_and_extract_files_from_args(tool_ret, tool, "output")
+        if output_files:
+            tool_ret["prompt"] = "请你把FileID，如file-开头的字符串当作是文件内容，不要出现file-的字符串。"
         tool_ret_json = json.dumps(tool_ret, ensure_ascii=False)
         return ToolResponse(json=tool_ret_json, files=input_files + output_files)
 
@@ -334,8 +335,6 @@ class Agent(BaseAgent):
         self, args: Dict[str, Any], tool: BaseTool, file_type: Literal["input", "output"]
     ) -> List[AgentFile]:
         agent_files: List[AgentFile] = []
-        if not isinstance(args, dict):
-            raise RuntimeError("Tool Response Error")
         for val in args.values():
             if isinstance(val, str):
                 if is_local_file_id(val):

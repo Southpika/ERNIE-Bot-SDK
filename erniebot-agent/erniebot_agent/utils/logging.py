@@ -196,7 +196,6 @@ def setup_logging(
             if log_file_path is not None:
                 file_name = os.path.join(log_file_path, "erniebot-agent.log")
                 file_handler = logging.FileHandler(file_name)
-                print(log_file_path)
             else:
                 file_handler = logging.FileHandler("erniebot-agent.log")
             file_handler.setFormatter(FileFormatter("%(message)s"))

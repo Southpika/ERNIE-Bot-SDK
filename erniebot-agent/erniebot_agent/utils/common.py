@@ -69,12 +69,13 @@ def get_file_type(file_name: str) -> str:
     if '.' not in file_name:
         raise ValueError("file_name should contain suffix")
     
-    picture_pattern = set('jpg', 'png', 'jpeg')
-    audio_pattern = set('mp3', 'wav')
-    video_pattern = set('mp4', 'avi')
-    if file_name.split('.')[-1] in picture_pattern:
+    picture_pattern = set(['jpg', 'png', 'jpeg'])
+    audio_pattern = set(['mp3', 'wav'])
+    video_pattern = set(['mp4', 'avi'])
+    file_suffix = file_name.split('.')[-1].lower()
+    if  file_suffix in picture_pattern:
         return 'picture'
-    elif file_name.split('.')[-1] in audio_pattern:
+    elif file_suffix in audio_pattern:
         return 'audio'
-    elif file_name.split('.')[-1] in video_pattern:
+    elif file_suffix in video_pattern:
         return 'video'

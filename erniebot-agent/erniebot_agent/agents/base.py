@@ -21,7 +21,6 @@ from erniebot_agent import file_io
 from erniebot_agent.agents.callback.callback_manager import CallbackManager
 from erniebot_agent.agents.callback.default import get_default_callbacks
 from erniebot_agent.agents.callback.handlers.base import CallbackHandler
-from erniebot_agent.utils.html_format import ITEM_LIST_HTML, IMAGE_HTML
 from erniebot_agent.agents.schema import (
     AgentFile,
     AgentResponse,
@@ -36,8 +35,9 @@ from erniebot_agent.memory.base import Memory
 from erniebot_agent.messages import Message, SystemMessage
 from erniebot_agent.tools.base import BaseTool
 from erniebot_agent.tools.tool_manager import ToolManager
+from erniebot_agent.utils.html_format import IMAGE_HTML, ITEM_LIST_HTML
 from erniebot_agent.utils.logging import logger
-from erniebot_agent.utils.common import get_file_type
+
 
 class BaseAgent(metaclass=abc.ABCMeta):
     @abc.abstractmethod
@@ -109,7 +109,7 @@ class Agent(BaseAgent):
             ) from None
 
         raw_messages = []
-        self.use_file = []
+        self.use_file: List[File] = []
 
         def _pre_chat(text, history):
             history.append([text, None])
@@ -139,15 +139,12 @@ class Agent(BaseAgent):
                 if output_file_id in response.text:
                     output_result = response.text
                     output_result = output_result.replace(
-                        output_file_id, IMAGE_HTML.format(
-                            BASE64_ENCODED=base64_encoded, 
-                            IMG_LOCATION=None
-                            )
+                        output_file_id, IMAGE_HTML.format(BASE64_ENCODED=base64_encoded)
                     )
                 else:
                     output_result = response.text
                     history[-1][1] = output_result
-                    
+
             else:
                 output_result = response.text
 
@@ -167,14 +164,13 @@ class Agent(BaseAgent):
             self.reset_memory()
             return None, None, None, None
 
-        async def _upload(file: gr.utils.NamedString, history:list):
-
+        async def _upload(file: gr.utils.NamedString, history: list):
             for single_file in file:
                 upload_file = await self._file_manager.create_file_from_path(single_file.name)
                 self.use_file.append(upload_file)
-                history = history + [((single_file.name,),None)]
+                history = history + [((single_file.name,), None)]
             size = len(file)
-                   
+
             output_lis = self._file_manager._file_registry.list_files()
             item = ""
             for i in range(len(output_lis) - size):
@@ -213,11 +209,11 @@ class Agent(BaseAgent):
                     with gr.Column(min_width=100):
                         clear_button = gr.Button("Clear", min_width=100)
                         file_button = gr.UploadButton(
-                            "Upload", 
+                            "Upload",
                             min_width=100,
                             file_count="multiple",
-                            file_types=["image", "video", "audio"]
-                            )
+                            file_types=["image", "video", "audio"],
+                        )
 
                 with gr.Accordion("Files", open=False):
                     file_lis = self._file_manager._file_registry.list_files()
@@ -271,7 +267,7 @@ class Agent(BaseAgent):
             )
             file_button.upload(
                 _upload,
-                inputs=[file_button,chatbot],
+                inputs=[file_button, chatbot],
                 outputs=[all_files, chatbot],
             )
 

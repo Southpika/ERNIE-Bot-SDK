@@ -17,13 +17,14 @@ from __future__ import annotations
 import logging
 import os
 import re
-from typing import List, Optional, Union
+from typing import Dict, List, Optional, Union
 
+from erniebot_agent import messages
 from erniebot_agent.messages import FunctionMessage, Message
 from erniebot_agent.utils.json import to_pretty_json
-from erniebot_agent.utils.output_style import ColoredText
+from erniebot_agent.utils.output_style import ColoredContent
 
-__all__ = ["logger", "setup_logging"]
+__all__ = ["logger", "set_role_color", "setup_logging"]
 
 logger = logging.getLogger("erniebot_agent")
 
@@ -77,7 +78,7 @@ class ColorFormatter(logging.Formatter):
         if record.args:
             record_lis = list(record.args)
             for i in range(len(record_lis)):
-                if isinstance(record_lis[i], ColoredText):
+                if isinstance(record_lis[i], ColoredContent):
                     record_lis[i] = record_lis[i].get_colored_text()
             record.args = tuple(record_lis)
 
@@ -95,7 +96,7 @@ class FileFormatter(logging.Formatter):
         output = []
         if record.args:
             for arg in record.args:
-                if isinstance(arg, ColoredText):
+                if isinstance(arg, ColoredContent):
                     self.extract_content(arg.text, output)
         log_message = ""
         if output:
@@ -109,7 +110,7 @@ class FileFormatter(logging.Formatter):
             chat_lis = []
             func_lis = []
             for i in range(len(text)):
-                if isinstance(text[i], Message):
+                if isinstance(text[i], messages.Message):
                     chat_res, func_res = self.handle_message(text[i])
                     chat_lis.append(chat_res)
                     if func_res:
@@ -139,7 +140,7 @@ class FileFormatter(logging.Formatter):
             return message.to_dict(), None
 
 
-def open_role_color(open: bool = True):
+def set_role_color(open: bool = True, role_color: Optional[Dict] = None):
     """
     Open or close color role in log, if open, different role will have different color.
 
@@ -147,11 +148,12 @@ def open_role_color(open: bool = True):
         open (bool, optional): whether or not to open. Defaults to True.
     """
     if open:
-        role_color = {"user": "Blue", "function": "Purple", "assistant": "Yellow"}
+        if not role_color:
+            role_color = {"user": "Blue", "function": "Purple", "assistant": "Yellow"}
     else:
         role_color = {}
 
-    ColoredText.set_global_role_color(role_color)
+    ColoredContent.set_global_role_color(role_color)
 
 
 def setup_logging(
@@ -187,7 +189,7 @@ def setup_logging(
             console_handler = logging.StreamHandler()
             console_handler.setFormatter(ColorFormatter("%(levelname)s - %(message)s"))
             logger.addHandler(console_handler)
-            open_role_color()
+            set_role_color()
 
         if use_file_handler or os.getenv("EB_LOGGING_FILE"):
             log_file_path = os.getenv("EB_LOGGING_FILE")
@@ -200,4 +202,4 @@ def setup_logging(
             file_handler.setFormatter(FileFormatter("%(message)s"))
             logger.addHandler(file_handler)
 
-        ColoredText.set_global_max_length(log_max_length)
+        ColoredContent.set_global_max_length(log_max_length)

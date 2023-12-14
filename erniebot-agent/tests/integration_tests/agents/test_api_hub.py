@@ -53,38 +53,54 @@ class TestOCRRemotePlugin(unittest.IsolatedAsyncioTestCase):
     #     result = await agent.async_run(f"帮我看看图片内容是否符合规范\n\n图片：[{file.id}]")
     #     print("result -> ", result)
 
-    @pytest.mark.asyncio
-    async def test_image_enhancement(self):
-        url = "https://tool-img-enhance.aistudio-hub.baidu.com"
-        toolkit = RemoteToolkit.from_url(url, access_token="1dc43e5843cfb51b7b41ba766aff2372cf2f3ccb")
-        # toolkit = RemoteToolkit.from_openapi_file("openapi.larger.yaml", access_token="1dc43e5843cfb51b7b41ba766aff2372cf2f3ccb")
-
-        file_manager = FileManager()
-
-        file = await file_manager.create_file_from_path(r"/Users/tanzhehao/Downloads/43.png")
-
-        agent = self.get_agent(toolkit)
-        result = await agent.async_run(f"请帮我将图片无损放大一下\n\n图片：[{file.id}]")
-        content = await result.files[-1].file.read_contents()
-        print(result)
-        with open("sss.png", "wb") as f:
-            f.write(content)
-
-        assert len(result.files) == 2
-        assert ".png" in result.files[0].file.filename
-
-        print("result -> ", result)
-
     # @pytest.mark.asyncio
-    # async def test_text_to_audio(self):
-    #     url = "http://tool-texttospeech.sandbox-aistudio-hub.baidu.com"
+    # async def test_image_enhancement(self):
+    #     url = "https://tool-img-enhance.aistudio-hub.baidu.com"
     #     toolkit = RemoteToolkit.from_url(url, access_token="1dc43e5843cfb51b7b41ba766aff2372cf2f3ccb")
+    #     # toolkit = RemoteToolkit.from_openapi_file("openapi.larger.yaml", access_token="1dc43e5843cfb51b7b41ba766aff2372cf2f3ccb")
+
+    #     file_manager = FileManager()
+
+    #     file = await file_manager.create_file_from_path(r"/Users/tanzhehao/Downloads/43.png")
 
     #     agent = self.get_agent(toolkit)
-    #     result = await agent.async_run(f"帮我把这句话转化成语音：我爱中国")
-    #     assert len(result.files) == 1
-    #     assert ".m3a" in result.files[0].file.filename
+    #     result = await agent.async_run(f"请帮我将图片无损放大一下\n\n图片：[{file.id}]")
+    #     content = await result.files[-1].file.read_contents()
+    #     print(result)
+    #     with open("sss.png", "wb") as f:
+    #         f.write(content)
+
+    #     assert len(result.files) == 2
+    #     assert ".png" in result.files[0].file.filename
+
+    #     print("result -> ", result)
+
+    @pytest.mark.asyncio
+    async def test_text_to_audio(self):
+        url = "http://tool-texttospeech.sandbox-aistudio-hub.baidu.com"
+        toolkit = RemoteToolkit.from_url(url, access_token="1dc43e5843cfb51b7b41ba766aff2372cf2f3ccb")
+
+        agent = self.get_agent(toolkit)
+        result = await agent.async_run(f"帮我把这句话转化成语音：我爱中国")
+        assert len(result.files) == 1
+        # assert ".m3a" in result.files[0].file.filename
+        breakpoint()
+        print(result.files)
+        file = result.files[0]
+
+    # @pytest.mark.asyncio
+    # async def test_humanseg(self):
+    #     url = "https://7ew8u1x7aesbn372.aistudio-hub.baidu.com"
+    #     toolkit = RemoteToolkit.from_url(url, access_token="7d109d14c26a3e0e5a01f841927c30331ad07e62")
+
+    #     agent = self.get_agent(toolkit)
+    #     file_manager = FileManager()
+    #     file = await file_manager.create_file_from_path(r"/Users/tanzhehao/Desktop/human_attr.jpg")
+    #     result = await agent.async_run(f"帮我把这张图片里面的行人分离出来", files=[file])
+    #     assert len(result.files) == 2
     #     file = result.files[0]
+
+
 
     # @pytest.mark.asyncio
     # async def test_plugin_schema(self):

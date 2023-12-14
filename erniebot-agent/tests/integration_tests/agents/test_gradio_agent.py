@@ -11,17 +11,22 @@ from erniebot_agent.tools.tool_manager import ToolManager
 
 async def image_moderation():
     tools = []
-    url = "https://tool-image-moderation.aistudio-hub.baidu.com"
-    toolkit = RemoteToolkit.from_url(url, version="v1.2", access_token="1dc43e5843cfb51b7b41ba766aff2372cf2f3ccb")
-    tools.extend(toolkit.get_tools())
-    url = "https://tool-highacc-ocr.aistudio-hub.baidu.com"
-    toolkit = RemoteToolkit.from_url(url, version="v1.3", access_token="1dc43e5843cfb51b7b41ba766aff2372cf2f3ccb")
-    tools.extend(toolkit.get_tools())
-    url = "https://tool-img-enhance.aistudio-hub.baidu.com"
+    # url = "https://tool-image-moderation.aistudio-hub.baidu.com"
+    # toolkit = RemoteToolkit.from_url(url, version="v1.2", access_token="1dc43e5843cfb51b7b41ba766aff2372cf2f3ccb")
+    # tools.extend(toolkit.get_tools())
+    # url = "https://tool-highacc-ocr.aistudio-hub.baidu.com"
+    # toolkit = RemoteToolkit.from_url(url, version="v1.3", access_token="1dc43e5843cfb51b7b41ba766aff2372cf2f3ccb")
+    # tools.extend(toolkit.get_tools())
+    # url = "https://tool-img-enhance.aistudio-hub.baidu.com"
+    # toolkit = RemoteToolkit.from_url(url, access_token="1dc43e5843cfb51b7b41ba766aff2372cf2f3ccb")
+    # tools.extend(toolkit.get_tools())
+    url = "http://tool-texttospeech.sandbox-aistudio-hub.baidu.com"
     toolkit = RemoteToolkit.from_url(url, access_token="1dc43e5843cfb51b7b41ba766aff2372cf2f3ccb")
     tools.extend(toolkit.get_tools())
+    # url = "https://7ew8u1x7aesbn372.aistudio-hub.baidu.com"
+    # toolkit = RemoteToolkit.from_url(url, access_token="7d109d14c26a3e0e5a01f841927c30331ad07e62")
+    # tools.extend(toolkit.get_tools())
     # tools.append(ImageSegmentTool())
-
     llm = ERNIEBot(
         model="ernie-bot", api_type="custom", access_token="1dc43e5843cfb51b7b41ba766aff2372cf2f3ccb"
     )

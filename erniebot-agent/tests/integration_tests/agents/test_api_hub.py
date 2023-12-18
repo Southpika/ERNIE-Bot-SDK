@@ -18,7 +18,7 @@ class TestOCRRemotePlugin(unittest.IsolatedAsyncioTestCase):
     def get_agent(self, toolkit: RemoteToolkit):
         # llm = ERNIEBot(model="ernie-bot-4")
         llm = ERNIEBot(
-            model="ernie-bot", api_type="custom", access_token="1dc43e5843cfb51b7b41ba766aff2372cf2f3ccb"
+            model="ernie-bot", api_type="aistudio", access_token='1dc43e5843cfb51b7b41ba766aff2372cf2f3ccb'
         )
 
         agent = FunctionalAgent(
@@ -75,29 +75,51 @@ class TestOCRRemotePlugin(unittest.IsolatedAsyncioTestCase):
 
     #     print("result -> ", result)
 
-    @pytest.mark.asyncio
-    async def test_text_to_audio(self):
-        url = "http://tool-texttospeech.sandbox-aistudio-hub.baidu.com"
-        toolkit = RemoteToolkit.from_url(url, access_token="1dc43e5843cfb51b7b41ba766aff2372cf2f3ccb")
-
-        agent = self.get_agent(toolkit)
-        result = await agent.async_run(f"帮我把这句话转化成语音：我爱中国")
-        assert len(result.files) == 1
-        # assert ".m3a" in result.files[0].file.filename
-        breakpoint()
-        print(result.files)
-        file = result.files[0]
-
     # @pytest.mark.asyncio
-    # async def test_humanseg(self):
-    #     url = "https://7ew8u1x7aesbn372.aistudio-hub.baidu.com"
-    #     toolkit = RemoteToolkit.from_url(url, access_token="7d109d14c26a3e0e5a01f841927c30331ad07e62")
+    # async def test_text_to_audio(self):
+    #     url = "http://tool-texttospeech.sandbox-aistudio-hub.baidu.com"
+    #     toolkit = RemoteToolkit.from_url(url, access_token="1dc43e5843cfb51b7b41ba766aff2372cf2f3ccb")
 
     #     agent = self.get_agent(toolkit)
+    #     result = await agent.async_run(f"帮我把这句话转化成语音：我爱中国")
+    #     assert len(result.files) == 1
+    #     # assert ".m3a" in result.files[0].file.filename
+    #     print(result.files)
+    #     file = result.files[0]
+
+    @pytest.mark.asyncio
+    async def test_humanseg(self):
+       
+        file_manager = FileManager()
+        
+        # url = "https://dfn9ed87r7138fi3.aistudio-hub.baidu.com" 
+        url = 'http://tool-pp-human-v2.sandbox-aistudio-hub.baidu.com'   
+        # 4ce50e3378f418d271c480c8ddfa818537071dbe    
+        toolkit = RemoteToolkit.from_url(url, access_token="1dc43e5843cfb51b7b41ba766aff2372cf2f3ccb", file_manager = file_manager)
+
+        agent = self.get_agent(toolkit)
+        
+        file = await file_manager.create_file_from_path(r"/Users/tanzhehao/Desktop/human_attr.jpg")
+        result = await agent.async_run(f"帮我把这张图片里面的行人分离出来", files=[file])
+        assert len(result.files) == 2
+        file = result.files[0]
+        breakpoint()
+
+    # @pytest.mark.asyncio
+    # async def test_ocr_structure(self):
+       
     #     file_manager = FileManager()
-    #     file = await file_manager.create_file_from_path(r"/Users/tanzhehao/Desktop/human_attr.jpg")
-    #     result = await agent.async_run(f"帮我把这张图片里面的行人分离出来", files=[file])
-    #     assert len(result.files) == 2
+        
+    #     # url = "https://yfo319edw9s7d2t6.aistudio-hub.baidu.com"
+    #     url = 'http://tool-pp-structure-v2.sandbox-aistudio-hub.baidu.com' 
+    #     #4ce50e3378f418d271c480c8ddfa818537071dbe
+    #     toolkit = RemoteToolkit.from_url(url, access_token="1dc43e5843cfb51b7b41ba766aff2372cf2f3ccb", file_manager = file_manager)
+
+    #     agent = self.get_agent(toolkit)
+
+    #     file = await file_manager.create_file_from_path(r"/Users/tanzhehao/Desktop/Unknown.png")
+    #     result = await agent.async_run(f"帮我提取这个表格的内容，以markdown的形式输出", files=[file])
+    #     assert len(result.files) == 1
     #     file = result.files[0]
 
 

@@ -118,41 +118,47 @@ class GradioMixin:
         with gr.Blocks(
             title="ERNIE Bot Agent Demo", theme=gr.themes.Soft(spacing_size="sm", text_size="md")
         ) as demo:
-            with gr.Column():
-                chatbot = gr.Chatbot(
-                    label="Chat history",
-                    latex_delimiters=[
-                        {"left": "$$", "right": "$$", "display": True},
-                        {"left": "$", "right": "$", "display": False},
-                    ],
-                    bubble_full_width=False,
-                    height=750,
-                )
+            with gr.Tab():
 
-                with gr.Row():
-                    prompt_textbox = gr.Textbox(
+                with gr.Column():
+                    chatbot = gr.Chatbot(
+                        label="Chat history",
+                        latex_delimiters=[
+                            {"left": "$$", "right": "$$", "display": True},
+                            {"left": "$", "right": "$", "display": False},
+                        ],
+                        bubble_full_width=False,
+                        height=750,
+                    )
+
+                    with gr.Row():
+                        prompt_textbox = gr.Textbox(
+                            label="Prompt", placeholder="Write a prompt here...", scale=15
+                        )
+                        submit_button = gr.Button("Submit", min_width=150)
+                        with gr.Column(min_width=100):
+                            clear_button = gr.Button("Clear", min_width=100)
+                            file_button = gr.UploadButton(
+                                "Upload",
+                                min_width=100,
+                                file_count="multiple",
+                                file_types=["image", "video", "audio"],
+                            )
+
+                    with gr.Accordion("Files", open=False):
+                        file_lis = self._file_manager.registry.list_files()
+                        all_files = gr.HTML(value=file_lis, label="All input files")
+                    with gr.Accordion("Tools", open=False):
+                        attached_tools = self._tool_manager.get_tools()
+                        tool_descriptions = [tool.function_call_schema() for tool in attached_tools]
+                        gr.JSON(value=tool_descriptions)
+                    with gr.Accordion("Raw messages", open=False):
+                        all_messages_json = gr.JSON(label="All messages")
+                        agent_memory_json = gr.JSON(label="Messges in memory")
+            with gr.Tab():
+                prompt_textbox = gr.Textbox(
                         label="Prompt", placeholder="Write a prompt here...", scale=15
                     )
-                    submit_button = gr.Button("Submit", min_width=150)
-                    with gr.Column(min_width=100):
-                        clear_button = gr.Button("Clear", min_width=100)
-                        file_button = gr.UploadButton(
-                            "Upload",
-                            min_width=100,
-                            file_count="multiple",
-                            file_types=["image", "video", "audio"],
-                        )
-
-                with gr.Accordion("Files", open=False):
-                    file_lis = self._file_manager.registry.list_files()
-                    all_files = gr.HTML(value=file_lis, label="All input files")
-                with gr.Accordion("Tools", open=False):
-                    attached_tools = self._tool_manager.get_tools()
-                    tool_descriptions = [tool.function_call_schema() for tool in attached_tools]
-                    gr.JSON(value=tool_descriptions)
-                with gr.Accordion("Raw messages", open=False):
-                    all_messages_json = gr.JSON(label="All messages")
-                    agent_memory_json = gr.JSON(label="Messges in memory")
             prompt_textbox.submit(
                 _pre_chat,
                 inputs=[prompt_textbox, chatbot],

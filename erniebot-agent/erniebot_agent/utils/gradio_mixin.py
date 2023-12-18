@@ -55,10 +55,7 @@ class GradioMixin:
                 output_file = self._file_manager.look_up_file_by_id(output_file_id)
                 file_content = await output_file.read_contents()
                 if get_file_type(response.files[-1].file.filename) == "image":
-<<<<<<< HEAD
-=======
                     # If it is a image, we can display it in the same chat page
->>>>>>> refs/remotes/upstream/develop
                     base64_encoded = base64.b64encode(file_content).decode("utf-8")
                     if output_file_id in response.text:
                         output_result = response.text
@@ -68,11 +65,7 @@ class GradioMixin:
                     else:
                         output_result = response.text + IMAGE_HTML.format(BASE64_ENCODED=base64_encoded)
                 else:
-<<<<<<< HEAD
-                    # TODO: Support multiple files
-=======
                     # TODO: Support multiple files, support audio now
->>>>>>> refs/remotes/upstream/develop
                     temp_save_file_name = os.path.join(td, response.files[-1].file.filename)
                     with open(temp_save_file_name, "wb") as f:
                         f.write(file_content)
@@ -83,11 +76,7 @@ class GradioMixin:
 
             history[-1][1] = output_result
             if temp_save_file_name:
-<<<<<<< HEAD
-                # If it is not
-=======
                 # If it is not image, we should have another chat page
->>>>>>> refs/remotes/upstream/develop
                 history = history + [(None, (temp_save_file_name,))]
             raw_messages.extend(response.chat_history)
             return (
@@ -131,49 +120,6 @@ class GradioMixin:
         with gr.Blocks(
             title="ERNIE Bot Agent Demo", theme=gr.themes.Soft(spacing_size="sm", text_size="md")
         ) as demo:
-<<<<<<< HEAD
-            with gr.Tab():
-
-                with gr.Column():
-                    chatbot = gr.Chatbot(
-                        label="Chat history",
-                        latex_delimiters=[
-                            {"left": "$$", "right": "$$", "display": True},
-                            {"left": "$", "right": "$", "display": False},
-                        ],
-                        bubble_full_width=False,
-                        height=750,
-                    )
-
-                    with gr.Row():
-                        prompt_textbox = gr.Textbox(
-                            label="Prompt", placeholder="Write a prompt here...", scale=15
-                        )
-                        submit_button = gr.Button("Submit", min_width=150)
-                        with gr.Column(min_width=100):
-                            clear_button = gr.Button("Clear", min_width=100)
-                            file_button = gr.UploadButton(
-                                "Upload",
-                                min_width=100,
-                                file_count="multiple",
-                                file_types=["image", "video", "audio"],
-                            )
-
-                    with gr.Accordion("Files", open=False):
-                        file_lis = self._file_manager.registry.list_files()
-                        all_files = gr.HTML(value=file_lis, label="All input files")
-                    with gr.Accordion("Tools", open=False):
-                        attached_tools = self._tool_manager.get_tools()
-                        tool_descriptions = [tool.function_call_schema() for tool in attached_tools]
-                        gr.JSON(value=tool_descriptions)
-                    with gr.Accordion("Raw messages", open=False):
-                        all_messages_json = gr.JSON(label="All messages")
-                        agent_memory_json = gr.JSON(label="Messges in memory")
-            with gr.Tab():
-                prompt_textbox = gr.Textbox(
-                        label="Prompt", placeholder="Write a prompt here...", scale=15
-                    )
-=======
             with gr.Column():
                 chatbot = gr.Chatbot(
                     label="Chat history",
@@ -209,7 +155,6 @@ class GradioMixin:
                 with gr.Accordion("Raw messages", open=False):
                     all_messages_json = gr.JSON(label="All messages")
                     agent_memory_json = gr.JSON(label="Messges in memory")
->>>>>>> refs/remotes/upstream/develop
             prompt_textbox.submit(
                 _pre_chat,
                 inputs=[prompt_textbox, chatbot],
@@ -257,13 +202,9 @@ class GradioMixin:
 
         with tempfile.TemporaryDirectory() as td:
             if "allowed_paths" in launch_kwargs:
-<<<<<<< HEAD
-                allowed_paths = [launch_kwargs["allowed_paths"] + [td]]
-=======
                 if not isinstance(launch_kwargs["allowed_paths"], list):
                     raise ValueError("`allowed_paths` must be a list")
                 allowed_paths = launch_kwargs["allowed_paths"] + [td]
->>>>>>> refs/remotes/upstream/develop
                 launch_kwargs.pop("allowed_paths")
             else:
                 allowed_paths = [td]

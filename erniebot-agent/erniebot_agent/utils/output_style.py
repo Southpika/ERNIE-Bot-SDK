@@ -83,15 +83,6 @@ class ColoredContent:
         res = ""
         if isinstance(message, list):
             for msg in message:
-<<<<<<< HEAD
-                res += self._colorized_msg_by_role(msg, role_color, max_length)
-                res += "\n"
-        else:
-            res = self._colorized_msg_by_role(message, role_color, max_length)
-        return res
-
-    def _colorized_msg_by_role(self, msg: Message, role_color: dict, max_length: int):
-=======
                 res += self._colorize_msg_by_role(msg, role_color, max_length)
                 res += "\n"
         else:
@@ -99,7 +90,6 @@ class ColoredContent:
         return res
 
     def _colorize_msg_by_role(self, msg: Message, role_color: dict, max_length: int):
->>>>>>> upstream/develop
         res = ""
         for k, v in msg.to_dict().items():
             if isinstance(v, dict):

@@ -46,7 +46,7 @@ class LoggingHandler(CallbackHandler):
 
     async def on_run_start(self, agent: Agent, prompt: str) -> None:
         self.agent_info(
-            "%s is about to start running with input:\n %s",
+            "%s is about to start running with input:\n%s",
             agent.__class__.__name__,
             ColoredContent(prompt, role="user"),
             subject="Run",
@@ -65,7 +65,7 @@ class LoggingHandler(CallbackHandler):
 
     async def on_llm_end(self, agent: Agent, llm: ChatModel, response: LLMResponse) -> None:
         self.agent_info(
-            "%s finished running with output: \n%s",
+            "%s finished running with output:\n%s",
             llm.__class__.__name__,
             ColoredContent(response.message),
             subject="LLM",

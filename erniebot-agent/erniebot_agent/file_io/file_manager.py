@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import logging
 import os
 import pathlib
 import tempfile
@@ -25,8 +26,10 @@ from erniebot_agent.file_io.file_registry import FileRegistry, get_file_registry
 from erniebot_agent.file_io.local_file import LocalFile, create_local_file_from_path
 from erniebot_agent.file_io.protocol import FilePurpose
 from erniebot_agent.file_io.remote_file import RemoteFile, RemoteFileClient
-from erniebot_agent.utils.logging import logger
+from erniebot_agent.utils.exception import FileError
 from typing_extensions import TypeAlias
+
+logger = logging.getLogger(__name__)
 
 FilePath: TypeAlias = Union[str, os.PathLike]
 
@@ -111,9 +114,16 @@ class FileManager(object):
         return file
 
     async def create_local_file_from_path(
-        self, file_path: FilePath, file_purpose: FilePurpose, file_metadata: Optional[Dict[str, Any]]
+        self,
+        file_path: FilePath,
+        file_purpose: FilePurpose,
+        file_metadata: Optional[Dict[str, Any]],
     ) -> LocalFile:
-        file = create_local_file_from_path(pathlib.Path(file_path), file_purpose, file_metadata or {})
+        file = create_local_file_from_path(
+            pathlib.Path(file_path),
+            file_purpose,
+            file_metadata or {},
+        )
         self._file_registry.register_file(file)
         return file
 
@@ -190,7 +200,13 @@ class FileManager(object):
         return file
 
     def look_up_file_by_id(self, file_id: str) -> Optional[File]:
-        return self._file_registry.look_up_file(file_id)
+        file = self._file_registry.look_up_file(file_id)
+        if file is None:
+            raise FileError(
+                f"File with ID '{file_id}' not found. "
+                "Please check if the file exists and the `file_id` is correct."
+            )
+        return file
 
     async def list_remote_files(self) -> List[RemoteFile]:
         files = await self.remote_file_client.list_files()

@@ -97,13 +97,13 @@ class FileFormatter(logging.Formatter):
         if record.args:
             for arg in record.args:
                 if isinstance(arg, ColoredContent):
-                    self.extract_content(arg.text, output)
+                    output = self.extract_content(arg.text, output)
         log_message = ""
         if output:
             log_message += to_pretty_json(output)
         return log_message
 
-    def extract_content(self, text: Union[List[Message], Message, str], output: list):
+    def extract_content(self, text: Union[List[Message], Message, str], output: list) -> List[dict]:
         """Extract the content from message and convert to json format."""
         if isinstance(text, list):
             # List of messages
@@ -115,19 +115,21 @@ class FileFormatter(logging.Formatter):
                     chat_lis.append(chat_res)
                     if func_res:
                         func_lis.append(func_res)
-            output.append({"conversation": chat_lis.copy()})
+            output += [{"conversation": chat_lis.copy()}]
             if func_lis:
-                output.append({"function_call": func_lis.copy()})
+                output += [{"function_call": func_lis.copy()}]
+            return output
 
         elif isinstance(text, str):
             # Only handle Message Type
-            pass
+            return []
         else:
             # Message type
             chat_res, func_res = self.handle_message(text)
-            output.append({"conversation": [chat_res]})
+            output += [{"conversation": [chat_res]}]
             if func_res:
-                output.append({"function_call": [func_res]})
+                output += [{"function_call": [func_res]}]
+            return output
 
     def handle_message(self, message):
         if isinstance(message, FunctionMessage):
@@ -160,7 +162,7 @@ def setup_logging(
     verbosity: Optional[str] = None,
     use_standard_format: bool = True,
     use_file_handler: bool = False,
-    log_max_length: int = 100,
+    max_log_length: int = 100,
 ) -> None:
     """Configures logging for the ERNIE Bot Agent library.
 
@@ -168,6 +170,7 @@ def setup_logging(
         verbosity: A value indicating the logging level.
         use_standard_format: If True, use the library's standard logging format.
         use_file_handler: If True, use the library's file handler.
+        max_log_length: The max length of log message each round.
 
     Raises:
         ValueError: If the provided verbosity is not a valid logging level.
@@ -196,9 +199,10 @@ def setup_logging(
             if log_file_path is not None:
                 file_name = os.path.join(log_file_path, "erniebot-agent.log")
                 file_handler = logging.FileHandler(file_name)
+                print(log_file_path)
             else:
                 file_handler = logging.FileHandler("erniebot-agent.log")
             file_handler.setFormatter(FileFormatter("%(message)s"))
             logger.addHandler(file_handler)
 
-        ColoredContent.set_global_max_length(log_max_length)
+        ColoredContent.set_global_max_length(max_log_length)

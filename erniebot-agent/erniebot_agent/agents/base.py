@@ -54,6 +54,7 @@ class Agent(GradioMixin, BaseAgent):
         system_message: Optional[SystemMessage] = None,
         callbacks: Optional[Union[CallbackManager, List[CallbackHandler]]] = None,
         file_manager: Optional[FileManager] = None,
+        plugins: Optional[List[str]] = None,
     ) -> None:
         super().__init__()
         self.llm = llm
@@ -76,7 +77,18 @@ class Agent(GradioMixin, BaseAgent):
             self._callback_manager = CallbackManager(callbacks)
         if file_manager is None:
             file_manager = file_io.get_file_manager()
+        self.plugins = plugins
         self._file_manager = file_manager
+        self._init_file_repr()
+
+    def _init_file_repr(self):
+        self.file_needs_url = False
+
+        if self.plugins:
+            PLUGIN_WO_FILE = ["eChart"]
+            for plugin in self.plugins:
+                if plugin not in PLUGIN_WO_FILE:
+                    self.file_needs_url = True
 
     @property
     def tools(self) -> List[BaseTool]:
@@ -180,7 +192,7 @@ class Agent(GradioMixin, BaseAgent):
                 agent_files.append(AgentFile(file=file, type=file_type, used_by=tool.tool_name))
             elif isinstance(val, dict):
                 agent_files.extend(await self._sniff_and_extract_files_from_args(val, tool, file_type))
-            elif isinstance(val, list) and isinstance(val[0], dict):
+            elif isinstance(val, list) and len(val) > 0 and isinstance(val[0], dict):
                 for item in val:
                     agent_files.extend(await self._sniff_and_extract_files_from_args(item, tool, file_type))
         return agent_files

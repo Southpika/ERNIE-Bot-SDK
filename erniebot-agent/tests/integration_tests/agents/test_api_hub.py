@@ -8,7 +8,7 @@ from erniebot_agent.agents.functional_agent import FunctionalAgent
 from erniebot_agent.chat_models import ERNIEBot
 from erniebot_agent.file_io.file_manager import FileManager
 from erniebot_agent.memory import WholeMemory
-from erniebot_agent.tools.base import RemoteToolkit
+from erniebot_agent.tools import RemoteToolkit
 from erniebot_agent.tools.tool_manager import ToolManager
 
 os.environ["EB_MAX_RETRIES"] = "100"
@@ -105,22 +105,22 @@ class TestOCRRemotePlugin(unittest.IsolatedAsyncioTestCase):
         file = result.files[0]
         breakpoint()
 
-    # @pytest.mark.asyncio
-    # async def test_ocr_structure(self):
+    @pytest.mark.asyncio
+    async def test_ocr_structure(self):
        
-    #     file_manager = FileManager()
+        file_manager = FileManager()
         
-    #     # url = "https://yfo319edw9s7d2t6.aistudio-hub.baidu.com"
-    #     url = 'http://tool-pp-structure-v2.sandbox-aistudio-hub.baidu.com' 
-    #     #4ce50e3378f418d271c480c8ddfa818537071dbe
-    #     toolkit = RemoteToolkit.from_url(url, access_token="1dc43e5843cfb51b7b41ba766aff2372cf2f3ccb", file_manager = file_manager)
+        # url = "https://yfo319edw9s7d2t6.aistudio-hub.baidu.com"
+        url = 'http://tool-pp-structure-v2.sandbox-aistudio-hub.baidu.com' 
+        #4ce50e3378f418d271c480c8ddfa818537071dbe
+        toolkit = RemoteToolkit.from_url(url, access_token="1dc43e5843cfb51b7b41ba766aff2372cf2f3ccb", file_manager = file_manager)
 
-    #     agent = self.get_agent(toolkit)
+        agent = self.get_agent(toolkit)
 
-    #     file = await file_manager.create_file_from_path(r"/Users/tanzhehao/Desktop/Unknown.png")
-    #     result = await agent.async_run(f"帮我提取这个表格的内容，以markdown的形式输出", files=[file])
-    #     assert len(result.files) == 1
-    #     file = result.files[0]
+        file = await file_manager.create_file_from_path(r"/Users/tanzhehao/Desktop/Unknown.png")
+        result = await agent.async_run(f"帮我提取这个表格的内容，以markdown的形式输出", files=[file])
+        assert len(result.files) == 1
+        file = result.files[0]
 
 
 

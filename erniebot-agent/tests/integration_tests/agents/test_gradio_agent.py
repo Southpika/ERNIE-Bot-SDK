@@ -4,7 +4,7 @@ from erniebot_agent.agents.functional_agent import FunctionalAgent
 from erniebot_agent.chat_models import ERNIEBot
 from erniebot_agent.file_io.file_manager import FileManager
 from erniebot_agent.memory import WholeMemory
-from erniebot_agent.tools.base import RemoteToolkit
+from erniebot_agent.tools import RemoteToolkit
 from erniebot_agent.tools.mimic_imgtool import ImageSegmentTool
 from erniebot_agent.tools.tool_manager import ToolManager
 
@@ -35,7 +35,7 @@ async def image_moderation():
     # tools.extend(toolkit.get_tools())
 
     llm = ERNIEBot(
-        model="ernie-bot", api_type="aistudio", access_token="1dc43e5843cfb51b7b41ba766aff2372cf2f3ccb"
+        model="ernie-bot", api_type="custom"
     )
 
     agent = FunctionalAgent(

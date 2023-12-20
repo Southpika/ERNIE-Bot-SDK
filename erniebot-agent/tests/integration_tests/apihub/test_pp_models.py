@@ -1,17 +1,10 @@
 from __future__ import annotations
 
-<<<<<<< HEAD
-import pytest
-from erniebot_agent.file_io.file_manager import FileManager
-from erniebot_agent.tools.remote_toolkit import RemoteToolkit
-from PIL import Image
-=======
 import json
 
 import pytest
 
-from erniebot_agent.tools.remote_toolkit import RemoteToolkit
->>>>>>> upstream/develop
+from erniebot_agent.tools import RemoteToolkit
 
 from .base import RemoteToolTesting
 
@@ -20,18 +13,6 @@ class TestPPRemoteTool(RemoteToolTesting):
     @pytest.mark.asyncio
     async def test_pp_matting(self):
         toolkit = RemoteToolkit.from_aistudio("pp-matting")
-<<<<<<< HEAD
-        file_manager = FileManager()
-
-        file = await file_manager.create_file_from_path(
-            self.download_file("https://paddlenlp.bj.bcebos.com/ebagent/ci/fixtures/remote-tools/trans.png")
-        )
-        agent = self.get_agent(toolkit)
-
-        result = await agent.async_run("请帮我对图片中的人像抠出来", files=[file])
-        self.assertEqual(len(result.files), 2)
-        Image.open(result.files[-1].file.path).show()
-=======
 
         file = await self.file_manager.create_file_from_path(self.download_fixture_file("trans.png"))
         agent = self.get_agent(toolkit)
@@ -39,23 +20,10 @@ class TestPPRemoteTool(RemoteToolTesting):
         result = await agent.async_run("请帮我对图片中的人像抠出来", files=[file])
 
         self.assertEqual(len(result.files), 2)
->>>>>>> upstream/develop
 
     @pytest.mark.asyncio
     async def test_pp_human_v2(self):
         toolkit = RemoteToolkit.from_aistudio("pp-human-v2")
-<<<<<<< HEAD
-        file_manager = FileManager()
-
-        file = await file_manager.create_file_from_path(
-            self.download_file("https://paddlenlp.bj.bcebos.com/ebagent/ci/fixtures/remote-tools/trans.png")
-        )
-        agent = self.get_agent(toolkit)
-
-        result = await agent.async_run("请分割图中的人", files=[file])
-        self.assertEqual(len(result.files), 2)
-        Image.open(result.files[-1].file.path).show()
-=======
 
         file = await self.file_manager.create_file_from_path(self.download_fixture_file("human_attr.jpg"))
         agent = self.get_agent(toolkit)
@@ -130,4 +98,3 @@ class TestPPRemoteTool(RemoteToolTesting):
         self.assertEqual(len(response.actions), 1)
         decoded_tool_ret = json.loads(response.chat_history[2].content)
         self.assertEqual(decoded_tool_ret, {"result": "中国\n汉字"})
->>>>>>> upstream/develop

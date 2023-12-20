@@ -3,14 +3,8 @@ from __future__ import annotations
 import asyncio
 
 import pytest
-<<<<<<< HEAD
-from erniebot_agent.file_io.file_manager import FileManager
-from erniebot_agent.tools.remote_toolkit import RemoteToolkit
-from PIL import Image
-=======
 
 from erniebot_agent.tools.remote_toolkit import RemoteToolkit
->>>>>>> upstream/develop
 
 from .base import RemoteToolTesting
 
@@ -18,18 +12,8 @@ from .base import RemoteToolTesting
 class TestRemoteTool(RemoteToolTesting):
     def setUp(self) -> None:
         super().setUp()
-<<<<<<< HEAD
-        self.file_manager = FileManager()
-        self.file = asyncio.run(
-            self.file_manager.create_file_from_path(
-                self.download_file(
-                    "https://paddlenlp.bj.bcebos.com/ebagent/ci/fixtures/remote-tools/shouxiezi.png"
-                )
-            )
-=======
         self.file = asyncio.run(
             self.file_manager.create_file_from_path(self.download_fixture_file("shouxiezi.png"))
->>>>>>> upstream/develop
         )
 
     @pytest.mark.asyncio
@@ -40,10 +24,7 @@ class TestRemoteTool(RemoteToolTesting):
 
         result = await agent.async_run("这张照片中的手写字是什么？", files=[self.file])
         self.assertEqual(len(result.files), 1)
-<<<<<<< HEAD
-=======
         self.assertIn("春天的梦", result.text)
->>>>>>> upstream/develop
 
     @pytest.mark.asyncio
     async def test_doc_rm_hand_wrt(self):
@@ -53,7 +34,3 @@ class TestRemoteTool(RemoteToolTesting):
 
         result = await agent.async_run("帮我把这张这张照片中的手写字的背景去除", files=[self.file])
         self.assertEqual(len(result.files), 2)
-<<<<<<< HEAD
-        Image.open(result.files[-1].file.path).show()
-=======
->>>>>>> upstream/develop

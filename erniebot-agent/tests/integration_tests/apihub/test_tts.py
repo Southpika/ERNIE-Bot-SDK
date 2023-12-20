@@ -1,10 +1,6 @@
 from __future__ import annotations
 
 import pytest
-<<<<<<< HEAD
-=======
-
->>>>>>> upstream/develop
 from erniebot_agent.tools.remote_toolkit import RemoteToolkit
 
 from .base import RemoteToolTesting

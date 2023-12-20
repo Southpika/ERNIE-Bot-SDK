@@ -1,3 +1,11 @@
+'''
+Author: Southpika 513923576@qq.com
+Date: 2023-12-20 17:32:24
+LastEditors: Southpika 513923576@qq.com
+LastEditTime: 2023-12-20 17:42:33
+FilePath: /ERINE/ERNIE-Bot-SDK/erniebot-agent/tests/integration_tests/apihub/base.py
+Description: 这是默认设置,请设置`customMade`, 打开koroFileHeader查看配置 进行设置: https://github.com/OBKoro1/koro1FileHeader/wiki/%E9%85%8D%E7%BD%AE
+'''
 from __future__ import annotations
 
 import os
@@ -12,11 +20,7 @@ from erniebot_agent.agents.functional_agent import FunctionalAgent
 from erniebot_agent.chat_models import ERNIEBot
 from erniebot_agent.file_io import get_file_manager
 from erniebot_agent.memory import WholeMemory
-<<<<<<< HEAD
-from erniebot_agent.tools.remote_toolkit import RemoteToolkit
-=======
 from erniebot_agent.tools import RemoteToolkit
->>>>>>> upstream/develop
 from erniebot_agent.tools.tool_manager import ToolManager
 
 

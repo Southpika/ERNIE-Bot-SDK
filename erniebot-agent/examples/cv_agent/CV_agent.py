@@ -16,9 +16,13 @@ class CVToolkit:
         self.tools = self.toolkit.get_tools()
 
 
+<<<<<<< HEAD
 llm = ERNIEBot(
     model="ernie-bot", api_type="aistudio", access_token="7d109d14c26a3e0e5a01f841927c30331ad07e62"
 )
+=======
+llm = ERNIEBot(model="ernie-3.5", api_type="aistudio", access_token="<your-access-token>")
+>>>>>>> upstream/develop
 toolkit = CVToolkit()
 memory = WholeMemory()
 file_manager = get_file_manager()

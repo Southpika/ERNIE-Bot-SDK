@@ -10,26 +10,39 @@ from typing import List
 
 
 _to_test = [
-    "https://j2e1u4rasbxau7pe.aistudio-hub.baidu.com/image_matting",  # pp matting
-    "https://s9m6cbjascw0g3re.aistudio-hub.baidu.com/image_strcture_ocr",  # pp sturcture
-    "https://83xelcf2o1c0yao0.aistudio-hub.baidu.com/analyze-vehicles",  # pp vehicle
-    "https://94b448z5hbe3y1v7.aistudio-hub.baidu.com/image_shitu",  # pp shitu
-    "https://t0h87bf7za23m365.aistudio-hub.baidu.com/ocr",  # pp ocr4
-    "https://ifmbccj2g0sfq17a.aistudio-hub.baidu.com/pp_tinypose",  # pp tinypose
-    "https://vfj9j0u1bb81l4g7.aistudio-hub.baidu.com/pp_humanseg_v2",  # pp humanseg
-    "https://b8t0j4p6ady2v9n6.aistudio-hub.baidu.com/segment_human_image",  # pp human
+    # "https://j2e1u4rasbxau7pe.aistudio-hub.baidu.com/image_matting",  # pp matting
+    # "https://g0h2o0nbv5m3nctf.aistudio-hub.baidu.com/image_strcture_ocr",  # pp sturcture
+    # "https://83xelcf2o1c0yao0.aistudio-hub.baidu.com/analyze-vehicles",  # pp vehicle
+    # "https://94b448z5hbe3y1v7.aistudio-hub.baidu.com/image_shitu",  # pp shitu
+    # "https://t0h87bf7za23m365.aistudio-hub.baidu.com/ocr",  # pp ocr4
+    # "https://ifmbccj2g0sfq17a.aistudio-hub.baidu.com/pp_tinypose",  # pp tinypose
+    # "https://vfj9j0u1bb81l4g7.aistudio-hub.baidu.com/pp_humanseg_v2",  # pp humanseg
+    # "https://b8t0j4p6ady2v9n6.aistudio-hub.baidu.com/segment_human_image",  # pp human
+    # "https://ias6x032h309ibwc.aistudio-hub.baidu.com/image_strcture_ocr", # strurcture 多并发
+    # "https://zbxd57k7nasbd1g0.aistudio-hub.baidu.com/segment_human_image", # pp human多并发
+    "https://y7ecr3j7e5qbm2q4.aistudio-hub.baidu.com/image_matting", # pp matting多并发
+    # "https://f1leiai9h1u5desa.aistudio-hub.baidu.com/pp_humanseg_v2",  # pp humanseg 多并发,
+    # "https://za71n9gbx3nfa6je.aistudio-hub.baidu.com/analyze-vehicles", # pp vehicle 多并发
+    # "https://mao38cjfu7z3n1cd.aistudio-hub.baidu.com/ocr", # pp ocr 多并发
+    # "https://19w7x1nerbx4fco2.aistudio-hub.baidu.com/pp_tinypose", # pp tinypose 多并发
 ]
 
 _test_file = [
+    # "trans.png",
+    # "ocr_table.png",
+    # "vehicle.jpg",
+    # "pp_shituv2_input_img.png",
+    # "ocr_example_input.png",
+    # "pp_tinypose_input_img.jpg",
+    # "humanseg_input_img.jpg",
+    # "human_attr.jpg",
+    # "ocr_table.png",
+    # "human_attr.jpg",
     "trans.png",
-    "ocr_table.png",
-    "vehicle.jpg",
-    "pp_shituv2_input_img.png",
-    "ocr_example_input.png",
-    "pp_tinypose_input_img.jpg",
-    "human_attr.jpg",
-    "humanseg_input_img.jpg",
-    "trans.png",
+    # "humanseg_input_img.jpg",
+    # "vehicle.jpg",
+    # "ocr_example_input.png",
+    # "pp_tinypose_input_img.jpg",
 ]
 
 headers = {
@@ -50,7 +63,7 @@ def get_logger() -> logging.Logger:
     logger = logging.getLogger(__name__)
     logger.setLevel(logging.DEBUG)
     file_handler = logging.FileHandler(
-        os.path.join(os.path.dirname(os.path.abspath(__file__)), "qps_new.log")
+        os.path.join(os.path.dirname(os.path.abspath(__file__)), "qps_bingfa.log")
     )
     file_handler.setLevel(logging.DEBUG)
     formatter = logging.Formatter("%(asctime)s - %(message)s")
@@ -90,7 +103,11 @@ async def download_files(file_name_list) -> List[str]:
 async def send_post_request(url, data) -> str:
     async with aiohttp.ClientSession() as session:
         async with session.post(url, json=data, headers=headers) as response:
-            await response.read()
+            try:
+                await response.read()
+            except:
+                logger.error(str(response))
+                pass
             if response.status != 200:
                 info = await response.text()
                 return info
@@ -117,9 +134,12 @@ async def test_qps(test_fimes: int = 5):
         results = await asyncio.gather(*tasks)
         duration = time.time() - start_time
         success = 0
+        print(results)
         for res in results:
             if res == 200:
                 success += 1
+            else:
+                print('fail:', res)
         logger.info(f"{test_module}: {duration}, success instances:{success}")
 
 

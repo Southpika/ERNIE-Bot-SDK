@@ -19,10 +19,10 @@ from erniebot_agent.agents.callback.callback_manager import CallbackManager
 from erniebot_agent.agents.callback.handlers.base import CallbackHandler
 from erniebot_agent.agents.schema import AgentAction, AgentFile, AgentResponse
 from erniebot_agent.chat_models.base import ChatModel
-from erniebot_agent.file_io.base import File
-from erniebot_agent.file_io.file_manager import FileManager
-from erniebot_agent.memory.base import Memory
-from erniebot_agent.messages import (
+from erniebot_agent.file.base import File
+from erniebot_agent.file.file_manager import FileManager
+from erniebot_agent.memory import Memory
+from erniebot_agent.memory.messages import (
     FunctionMessage,
     HumanMessage,
     Message,
@@ -119,7 +119,7 @@ class FunctionalAgent(Agent):
             messages=messages,
             functions=self._tool_manager.get_tool_schemas(),
             system=self.system_message.content if self.system_message is not None else None,
-            plugins=self.plugins,
+            plugins=self._plugins,
         )
         output_message = llm_resp.message
         chat_history.append(output_message)

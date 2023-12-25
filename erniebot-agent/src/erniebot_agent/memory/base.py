@@ -28,12 +28,19 @@
 
 from typing import List, Optional, Union
 
-from erniebot_agent.messages import AIMessage, Message, SystemMessage
+from erniebot_agent.memory.messages import AIMessage, Message, SystemMessage
 
 
 class MessageManager:
     """
-    Messages Manager.
+    Messages Manager, manage the messages of a conversation.
+
+    Attributes:
+        messages (List[Message]): the messages of a conversation.
+        system_message (SystemMessage): the system message of a conversation.
+
+    Note:
+        Each message manager have only one system message.
     """
 
     def __init__(self) -> None:
@@ -42,11 +49,6 @@ class MessageManager:
 
     @property
     def system_message(self) -> Optional[Message]:
-        """
-        The message manager have only one system message.
-
-        return: Message or None
-        """
         return self._system_message
 
     @system_message.setter
@@ -85,36 +87,39 @@ class MessageManager:
 
 
 class Memory:
-    """The base class of memory"""
+    """
+    The base class of memory
+
+    Attributes:
+        msg_manager (MessageManager): the message manager of a conversation.
+
+    Returns:
+        A memory object.
+    """
 
     def __init__(self):
         self.msg_manager = MessageManager()
 
     def add_messages(self, messages: List[Message]):
+        """Add a list of messages to memory."""
         for message in messages:
             self.add_message(message)
 
     def add_message(self, message: Message):
+        """Add a message to memory."""
         if isinstance(message, AIMessage):
             self.msg_manager.update_last_message_token_count(message.query_tokens_count)
 
         self.msg_manager.add_message(message)
 
     def get_messages(self) -> List[Message]:
+        """Get all the messages in memory."""
         return self.msg_manager.retrieve_messages()
 
     def get_system_message(self) -> SystemMessage:
+        """Get the system message in memory."""
         return self.msg_manager.system_message
 
     def clear_chat_history(self):
+        """Reset the memory."""
         self.msg_manager.clear_messages()
-
-    def edit_message(self, idx: int, message: Message) -> None:
-        self.msg_manager.edit_message(idx, message)
-
-
-class WholeMemory(Memory):
-    """The memory include all the messages"""
-
-    def __init__(self):
-        super().__init__()

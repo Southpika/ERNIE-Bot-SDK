@@ -15,14 +15,14 @@ _to_test = [
     # "https://83xelcf2o1c0yao0.aistudio-hub.baidu.com/analyze-vehicles",  # pp vehicle
     # "https://94b448z5hbe3y1v7.aistudio-hub.baidu.com/image_shitu",  # pp shitu
     # "https://t0h87bf7za23m365.aistudio-hub.baidu.com/ocr",  # pp ocr4
-    # "https://ifmbccj2g0sfq17a.aistudio-hub.baidu.com/pp_tinypose",  # pp tinypose
+    "https://pfa4gfe2rcv3xcp7.aistudio-hub.baidu.com/pp_tinypose",  # pp tinypose
     # "https://vfj9j0u1bb81l4g7.aistudio-hub.baidu.com/pp_humanseg_v2",  # pp humanseg
     # "https://b8t0j4p6ady2v9n6.aistudio-hub.baidu.com/segment_human_image",  # pp human
     # "https://ias6x032h309ibwc.aistudio-hub.baidu.com/image_strcture_ocr", # strurcture 多并发
     # "https://zbxd57k7nasbd1g0.aistudio-hub.baidu.com/segment_human_image", # pp human多并发
-    "https://57a2x6z9ucd56844.aistudio-hub.baidu.com/image_matting", # pp matting多并发
+    # "https://57a2x6z9ucd56844.aistudio-hub.baidu.com/image_matting", # pp matting多并发
     # "https://f1leiai9h1u5desa.aistudio-hub.baidu.com/pp_humanseg_v2",  # pp humanseg 多并发,
-    "https://2cudnfv334jaa1r1.aistudio-hub.baidu.com/analyze-vehicles", # pp vehicle 多并发
+    # "https://2cudnfv334jaa1r1.aistudio-hub.baidu.com/analyze-vehicles", # pp vehicle 多并发
     # "https://mao38cjfu7z3n1cd.aistudio-hub.baidu.com/ocr", # pp ocr 多并发
     # "https://19w7x1nerbx4fco2.aistudio-hub.baidu.com/pp_tinypose", # pp tinypose 多并发
 ]
@@ -33,14 +33,14 @@ _test_file = [
     # "vehicle.jpg",
     # "pp_shituv2_input_img.png",
     # "ocr_example_input.png",
-    # "pp_tinypose_input_img.jpg",
+    "pp_tinypose_input_img.jpg",
     # "humanseg_input_img.jpg",
     # "human_attr.jpg",
     # "ocr_table.png",
     # "human_attr.jpg",
-    "trans.png",
+    # "trans.png",
     # "humanseg_input_img.jpg",
-    "vehicle.jpg",
+    # "vehicle.jpg",
     # "ocr_example_input.png",
     # "pp_tinypose_input_img.jpg",
 ]

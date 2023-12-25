@@ -20,7 +20,7 @@ _to_test = [
     # "https://b8t0j4p6ady2v9n6.aistudio-hub.baidu.com/segment_human_image",  # pp human
     # "https://ias6x032h309ibwc.aistudio-hub.baidu.com/image_strcture_ocr", # strurcture 多并发
     # "https://zbxd57k7nasbd1g0.aistudio-hub.baidu.com/segment_human_image", # pp human多并发
-    "https://y7ecr3j7e5qbm2q4.aistudio-hub.baidu.com/image_matting", # pp matting多并发
+    "https://yao6o93cc3b0k6v2.aistudio-hub.baidu.com/image_matting", # pp matting多并发
     # "https://f1leiai9h1u5desa.aistudio-hub.baidu.com/pp_humanseg_v2",  # pp humanseg 多并发,
     # "https://za71n9gbx3nfa6je.aistudio-hub.baidu.com/analyze-vehicles", # pp vehicle 多并发
     # "https://mao38cjfu7z3n1cd.aistudio-hub.baidu.com/ocr", # pp ocr 多并发

@@ -1,11 +1,11 @@
-'''
+"""
 Author: Southpika 513923576@qq.com
 Date: 2023-12-20 17:32:24
 LastEditors: Southpika 513923576@qq.com
 LastEditTime: 2023-12-20 17:38:43
 FilePath: /ERINE/ERNIE-Bot-SDK/erniebot-agent/tests/integration_tests/apihub/test_img_transform.py
 Description: 这是默认设置,请设置`customMade`, 打开koroFileHeader查看配置 进行设置: https://github.com/OBKoro1/koro1FileHeader/wiki/%E9%85%8D%E7%BD%AE
-'''
+"""
 from __future__ import annotations
 
 import pytest

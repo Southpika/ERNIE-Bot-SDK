@@ -5,11 +5,12 @@ import os
 from typing import Dict, List, Type
 
 import webuiapi
+from pydantic import BaseModel, Field
+
 from erniebot_agent.messages import AIMessage, HumanMessage, Message
 from erniebot_agent.tools.base import Tool
 from erniebot_agent.tools.browser_main import Browser_Manager
 from erniebot_agent.tools.schema import ToolParameterView
-from pydantic import BaseModel, Field
 
 
 def get_img(prompt: str) -> None:
@@ -62,11 +63,11 @@ class ImageGenerateTool(Tool):
 
 
 async def main():
+    import erniebot
+
     from erniebot_agent.agents.functional_agent import FunctionalAgent
     from erniebot_agent.chat_models.erniebot import ERNIEBot
     from erniebot_agent.memory.whole_memory import WholeMemory
-
-    import erniebot
 
     # erniebot.api_type = "aistudio"
     # erniebot.access_token = os.getenv("EB_ACCESS_TOKEN")

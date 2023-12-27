@@ -14,4 +14,4 @@
 
 from erniebot_agent.utils.logging import setup_logging
 
-setup_logging(verbosity='info')
+setup_logging(verbosity="info")

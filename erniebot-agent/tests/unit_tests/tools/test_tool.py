@@ -2,11 +2,11 @@ import asyncio
 import os
 import unittest
 
+import erniebot
 import pytest
+
 from erniebot_agent.tools.browser_main import Browser_Manager
 from erniebot_agent.tools.text2img import ImageGenerateTool
-
-import erniebot
 
 erniebot.api_type = "aistudio"
 erniebot.access_token = os.getenv("EB_ACCESS_TOKEN")

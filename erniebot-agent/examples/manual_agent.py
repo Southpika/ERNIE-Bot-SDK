@@ -15,6 +15,7 @@
 from typing import AsyncGenerator, List, Optional, Union
 
 import gradio as gr
+
 from erniebot_agent.agents.base import Agent, ToolManager
 from erniebot_agent.agents.callback.callback_manager import CallbackManager
 from erniebot_agent.agents.callback.handlers.base import CallbackHandler
@@ -39,27 +40,27 @@ response = erniebot.ChatCompletion.create(
     tool_choice={"type": "function", "function": {"name": "toolA"},
 )
 """
+
+
 class ManualAgent(Agent):
     def __init__(
-            self, 
-            llm: ChatModel,
-            memory: Memory, 
-            tools: Union[ToolManager, List[Tool]],
-            tool_sequence: List[Tool],
-            system_message: str = None,
-            file_manager: FileManager = FileManager(),
-        ):
-
+        self,
+        llm: ChatModel,
+        memory: Memory,
+        tools: Union[ToolManager, List[Tool]],
+        tool_sequence: List[Tool],
+        system_message: str = None,
+        file_manager: FileManager = FileManager(),
+    ):
         super().__init__(
-            llm=llm, 
-            memory=memory, 
-            tools=tools, 
+            llm=llm,
+            memory=memory,
+            tools=tools,
             system_message=SystemMessage(system_message),
-            file_manager=file_manager
+            file_manager=file_manager,
         )
         self.file_manager = file_manager
         self.tool_sequence = tool_sequence
-
 
     async def _async_run(self, prompt: str) -> AgentResponse:
         chat_history: List[Message] = []
@@ -68,10 +69,10 @@ class ManualAgent(Agent):
         ask = HumanMessage(content=prompt)
 
         next_step_input: Message = ask
-        for tool in self.tool_sequence:            
+        for tool in self.tool_sequence:
             curr_step_output = await self._async_step(
                 next_step_input, chat_history, actions_taken, files_involved, tool
-            )                
+            )
 
             next_step_input = curr_step_output
 
@@ -80,16 +81,14 @@ class ManualAgent(Agent):
         response = self._create_finished_response(chat_history, actions_taken, files_involved)
         return response
 
-
     async def _async_step(
         self,
         step_input,
         chat_history: List[Message],
         actions: List[AgentAction],
         files: List[AgentFile],
-        tool: Tool
+        tool: Tool,
     ) -> Optional[Message]:
-        
         maybe_action = await self._async_plan(step_input, chat_history, tool)
         if isinstance(maybe_action, AgentAction):
             action: AgentAction = maybe_action
@@ -97,7 +96,6 @@ class ManualAgent(Agent):
             actions.append(action)
             files.extend(tool_resp.files)
             return FunctionMessage(name=action.tool_name, content=tool_resp.json)
-
 
     async def _async_plan(
         self, input_message: Message, chat_history: List[Message], tool: Tool
@@ -116,7 +114,7 @@ class ManualAgent(Agent):
             chat_history.append(output_message)
             # 如果output_message.function_call没有触发？
             return AgentAction(
-                tool_name=output_message.function_call["name"],  
+                tool_name=output_message.function_call["name"],
                 tool_args=output_message.function_call["arguments"],
             )
         else:
@@ -127,7 +125,7 @@ class ManualAgent(Agent):
             output_message = llm_resp.message
             chat_history.append(output_message)
             return None
-        
+
     def _create_finished_response(
         self,
         chat_history: List[Message],

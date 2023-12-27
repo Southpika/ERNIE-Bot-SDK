@@ -19,11 +19,12 @@ import os
 import uuid
 from typing import Dict, List, Optional, Type
 
+from PIL import Image
+from pydantic import Field
+
 from erniebot_agent.file_io.file_manager import FileManager
 from erniebot_agent.tools.base import Tool
 from erniebot_agent.tools.schema import ToolParameterView
-from PIL import Image
-from pydantic import Field
 
 
 def bytestr_to_png(bytestr, output_path):

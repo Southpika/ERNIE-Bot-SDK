@@ -1,18 +1,18 @@
 import os
 from typing import Dict, List, Optional, Type
 
+import erniebot
+from langchain.document_loaders import TextLoader
+from langchain.text_splitter import SpacyTextSplitter
+from langchain.vectorstores import FAISS
+from pydantic import BaseModel, Field
+
 from erniebot_agent.agents.functional_agent import FunctionalAgent
 from erniebot_agent.chat_models.erniebot import ERNIEBot
 from erniebot_agent.extensions.langchain.embeddings import ErnieEmbeddings
 from erniebot_agent.memory.whole_memory import WholeMemory
 from erniebot_agent.messages import AIMessage, HumanMessage, Message
 from erniebot_agent.tools.base import Tool, ToolParameterView
-from langchain.document_loaders import TextLoader
-from langchain.text_splitter import SpacyTextSplitter
-from langchain.vectorstores import FAISS
-from pydantic import BaseModel, Field
-
-import erniebot
 
 
 class SearchToolInputView(ToolParameterView):

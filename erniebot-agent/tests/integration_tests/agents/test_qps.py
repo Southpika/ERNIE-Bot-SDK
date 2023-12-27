@@ -1,13 +1,13 @@
-import asyncio
 import argparse
-import aiohttp
+import asyncio
 import base64
 import logging
-import time
 import os
-from tqdm import tqdm
+import time
 from typing import List
 
+import aiohttp
+from tqdm import tqdm
 
 _to_test = [
     # "https://j2e1u4rasbxau7pe.aistudio-hub.baidu.com/image_matting",  # pp matting
@@ -22,7 +22,7 @@ _to_test = [
     # "https://tool-pp-matting.aistudio-hub.baidu.com/ImageMatting?",
     # "https://tool-pp-structure-v2.aistudio-hub.baidu.com/image_structure?version=v2.1",
     # "https://zbxd57k7nasbd1g0.aistudio-hub.baidu.com/segment_human_image", # pp human多并发
-    "https://u4s4d5xeyex76cgf.aistudio-hub.baidu.com/image_matting", # pp matting多并发
+    "https://u4s4d5xeyex76cgf.aistudio-hub.baidu.com/image_matting",  # pp matting多并发
     # "https://f1leiai9h1u5desa.aistudio-hub.baidu.com/pp_humanseg_v2",  # pp humanseg 多并发,
     # "https://2cudnfv334jaa1r1.aistudio-hub.baidu.com/analyze-vehicles", # pp vehicle 多并发
     # "https://mao38cjfu7z3n1cd.aistudio-hub.baidu.com/ocr", # pp ocr 多并发
@@ -135,7 +135,6 @@ async def test_qps(test_fimes: int = 5):
         elif "ImageMatting" in test_module:
             data = {"image_byte_str": imgs[i]}
 
-
         for _ in tqdm(range(10)):
             start_time = time.time()
             tasks = [send_post_request(url, data) for _ in range(test_fimes)]
@@ -147,7 +146,7 @@ async def test_qps(test_fimes: int = 5):
                 if res == 200:
                     success += 1
                 else:
-                    print('fail:', res)
+                    print("fail:", res)
             logger.info(f"{test_module}: {duration}, success instances:{success}")
 
 

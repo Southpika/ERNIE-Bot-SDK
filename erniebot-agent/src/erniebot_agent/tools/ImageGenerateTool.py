@@ -20,13 +20,14 @@ import os
 import uuid
 from typing import Dict, List, Optional, Type
 
+from PIL import Image
+from pydantic import Field
+
 from erniebot_agent.file_io.file_manager import FileManager
 from erniebot_agent.messages import AIMessage, HumanMessage, Message
 from erniebot_agent.tools.base import RemoteToolkit, Tool
 from erniebot_agent.tools.schema import ToolParameterView
 from erniebot_agent.utils.common import download_file, get_cache_dir
-from PIL import Image
-from pydantic import Field
 
 API_URL = "https://aistudio.baidu.com/bd-gpu-04/user/732872/7155718/api_serving/8080"
 

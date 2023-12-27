@@ -2,11 +2,12 @@ from __future__ import annotations
 
 from typing import Dict, List, Type
 
+from pydantic import BaseModel, Field
+
 from erniebot_agent.messages import AIMessage, HumanMessage, Message
 from erniebot_agent.tools.base import Tool
 from erniebot_agent.tools.browser_main import Browser_Manager
 from erniebot_agent.tools.schema import ToolParameterView
-from pydantic import BaseModel, Field
 
 
 class SearchToolInputView(ToolParameterView):

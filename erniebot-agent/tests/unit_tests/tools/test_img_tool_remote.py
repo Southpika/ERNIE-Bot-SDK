@@ -1,7 +1,10 @@
-import pytest
-from erniebot_agent.tools.ImageGenerateTool import ImageGenerationTool
-from PIL import Image
 import io
+
+import pytest
+from PIL import Image
+
+from erniebot_agent.tools.ImageGenerateTool import ImageGenerationTool
+
 
 @pytest.mark.asyncio
 async def test_image_generation_tool():
@@ -13,4 +16,3 @@ async def test_image_generation_tool():
 
     assert isinstance(byte_str, bytes)
     assert len(byte_str) > 0
-

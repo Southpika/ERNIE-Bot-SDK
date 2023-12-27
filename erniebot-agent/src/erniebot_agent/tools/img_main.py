@@ -5,12 +5,12 @@ import io
 import os
 import unittest
 
+import erniebot
+from PIL import Image
+
 from erniebot_agent.file_io.file_manager import FileManager
 from erniebot_agent.file_io.remote_file_clients.bos_file_client import BOSFileClient
 from erniebot_agent.tools.base import RemoteToolkit
-from PIL import Image
-
-import erniebot
 
 API_URL = "https://aistudio.baidu.com/bd-gpu-04/user/732872/7155718/api_serving/8080"
 

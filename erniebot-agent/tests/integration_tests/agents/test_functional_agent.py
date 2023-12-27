@@ -1,6 +1,7 @@
 import json
 import logging
 import os
+
 import pytest
 
 from erniebot_agent.agents import FunctionAgent
@@ -8,8 +9,6 @@ from erniebot_agent.chat_models import ERNIEBot
 from erniebot_agent.memory import WholeMemory
 from erniebot_agent.memory.messages import AIMessage, FunctionMessage, HumanMessage
 from erniebot_agent.tools.calculator_tool import CalculatorTool
-
-
 
 ONE_HIT_PROMPT = "1+4等于几？"
 NO_HIT_PROMPT = "深圳今天天气怎么样？"
@@ -55,7 +54,6 @@ async def test_function_agent_run_one_hit(llm, tool, memory):
     assert steps[0].info.tool_name == tool.tool_name
 
 
-
 @pytest.mark.asyncio
 async def test_function_agent_run_no_hit(llm, tool, memory):
     agent = FunctionAgent(llm=llm, tools=[tool], memory=memory)
@@ -80,15 +78,15 @@ async def test_function_agent_run_no_tool(llm, memory, prompt):
 
     response = await agent.run(prompt)
 
-#     response = await agent.async_run(prompt)
+    #     response = await agent.async_run(prompt)
 
-#     messages = response.chat_history
-#     assert len(messages) == 2
-#     assert isinstance(messages[0], HumanMessage)
-#     assert messages[0].content == prompt
-#     assert isinstance(messages[1], AIMessage)
-#     assert messages[1].content == response.text
+    #     messages = response.chat_history
+    #     assert len(messages) == 2
+    #     assert isinstance(messages[0], HumanMessage)
+    #     assert messages[0].content == prompt
+    #     assert isinstance(messages[1], AIMessage)
+    #     assert messages[1].content == response.text
 
-#     assert len(response.actions) == 0
+    #     assert len(response.actions) == 0
 
     assert len(response.steps) == 0

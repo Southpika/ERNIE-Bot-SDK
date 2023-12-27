@@ -5,14 +5,14 @@ import time
 from typing import List
 from urllib.parse import quote
 
-import erniebot_agent
+import erniebot as eb
 import numpy as np
 import requests
 from bs4 import BeautifulSoup
-from erniebot_agent.tools.web_serach_tool import web_searcher
 from tqdm import tqdm
 
-import erniebot as eb
+import erniebot_agent
+from erniebot_agent.tools.web_serach_tool import web_searcher
 
 headers = {
     "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.6 Safari/605.1.15"

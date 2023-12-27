@@ -14,15 +14,18 @@
 
 from __future__ import annotations
 
+<<<<<<< HEAD
 import base64
 import os
 import json
 import tempfile
+=======
+>>>>>>> upstream/develop
 import warnings
-from typing import TYPE_CHECKING, Any, List, NoReturn, Optional, Protocol, cast, final
+from typing import Any, NoReturn, Protocol, final
 
-from erniebot_agent.utils.common import get_file_type
 from erniebot_agent.utils.exceptions import ObjectClosedError
+<<<<<<< HEAD
 from erniebot_agent.utils.html_format import IMAGE_HTML, ITEM_LIST_HTML
 
 if TYPE_CHECKING:
@@ -248,6 +251,8 @@ class GradioMixin:
             else:
                 allowed_paths = [td]
             demo.launch(allowed_paths=allowed_paths, **launch_kwargs)
+=======
+>>>>>>> upstream/develop
 
 
 class Closeable(Protocol):

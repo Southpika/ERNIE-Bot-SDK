@@ -1,9 +1,8 @@
-
 除了支持FunctionAgent以外，同时我们也支持通过ToolFormat以手动编排的方式通过Prompt激活Agent：通过事先定义Agent想要操作的步骤，然后通过指定的tool识别范式来运行tool。
 
 步骤
 
-1. Planning：通过Prompt事先指定
+1. Planning：通过Prompt事先指定相应的指令作为Plan，在Plan中具体指定哪一步要做什么以及工具调用。
 
 ```python
    INSTRUCTION = """你的指令是为我提供一个基于《{SCRIPT}》剧情的在线RPG游戏体验。\

@@ -12,7 +12,7 @@
 
     - `FileManager`操作文件主要用于异步函数中，在同步函数中使用可能会无效。
 
-    - `FileManager`将作为此模块中生命周期最长的对象，它会在关闭时回收所有的持有对象（RemoteClient/temp local file），请不要随意关闭它。如果需要关闭已停止对其中所有注册文件的使用。
+    - `FileManager`将作为此模块中生命周期最长的对象，它会在关闭时回收所有的持有对象（RemoteClient/temp local file），请不要随意关闭它。如果需要关闭，需要先停止对其中注册文件的使用。
 
 ## 2. 核心类
 
@@ -136,12 +136,14 @@ async def demo_function():
     await local_file.write_contents_to('your_willing_path')
 ```
 4. 配置 `GlobalFileManagerHandler`从而在Agent中直接获取相关文件
-   ```python
-   from erniebot_agent.file import GlobalFileManagerHandler
 
-   async def demo_function():
-       await GlobalFileManagerHandler().configure(save_dir='your_path') # 需要在事件循环最开始配置
-       ... # 此处省略agent创建过程
-       response = await agent.async_run('请帮我画一张北京市的图')
-       # 您可以通过AgentResponse.steps[-1]获取agent的最后一个步骤，然后最后一步的输出文件；或者在save_dir中找到所有文件
-       files = response.steps[-1].output_files
+```python
+from erniebot_agent.file import GlobalFileManagerHandler
+
+async def demo_function():
+    await GlobalFileManagerHandler().configure(save_dir='your_path') # 需要在事件循环最开始配置
+    ... # 此处省略agent创建过程
+    response = await agent.async_run('请帮我画一张北京市的图')
+    # 您可以通过AgentResponse.steps[-1]获取agent的最后一个步骤，然后最后一步的输出文件；或者在save_dir中找到所有文件
+    files = response.steps[-1].output_files
+```

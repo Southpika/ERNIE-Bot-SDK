@@ -55,7 +55,9 @@ class ScraperTool(Tool):
         Extracts the data from the link
         """
         content = ""
+       
         try:
+
             if link.endswith(".pdf"):
                 content = self.scrape_pdf_with_pymupdf(link)
             elif "arxiv.org" in link:
@@ -73,7 +75,7 @@ class ScraperTool(Tool):
     def scrape_text_with_bs(self, link, session):
         response = session.get(link, timeout=4)
         soup = BeautifulSoup(response.content, 'lxml', from_encoding=response.encoding)
-
+        # breakpoint()
         for script_or_style in soup(["script", "style"]):
             script_or_style.extract()
 
@@ -120,7 +122,7 @@ class ScraperTool(Tool):
             str: The text from the soup
         """
         text = ""
-        tags = ['p', 'h1', 'h2', 'h3', 'h4', 'h5']
+        tags = ['p', 'h1', 'h2', 'h3', 'h4', 'h5', 'pre']
         for element in soup.find_all(tags):  # Find all the <p> elements
             text += element.text + "\n"
-        return text
+        return text[:3000]

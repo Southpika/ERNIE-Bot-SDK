@@ -12,7 +12,6 @@ from langchain.document_loaders.base import BaseLoader
 from langchain.document_loaders.helpers import detect_file_encodings
 from langchain.embeddings import AzureOpenAIEmbeddings
 from langchain.text_splitter import (
-    CharacterTextSplitter,
     MarkdownHeaderTextSplitter,
     RecursiveCharacterTextSplitter,
 )
@@ -56,16 +55,22 @@ def read_md_file(file_path: str) -> Union[str, None]:
         return None
 
 
-def read_md_files(file_paths: Union[str, List[str]]) -> Union[List[str], str]:
-    if isinstance(file_paths, str):
-        return read_md_file(file_paths)
-    elif isinstance(file_paths, list):
-        md_contents = ""
-        for file_path in file_paths:
-            content = read_md_file(file_path)
-            if content is not None:
-                md_contents += content
-        return md_contents
+def load_md_files_to_doc(
+        file_paths: List[str],
+        chunk_size: int = 1000,
+        chunk_overlap: int = 30,
+    ) -> List[Document]:
+    markdown_splitter = MarkdownHeaderTextSplitter(headers_to_split_on=headers_to_split_on)
+    text_splitter = RecursiveCharacterTextSplitter(chunk_size=chunk_size, chunk_overlap=chunk_overlap)
+    output_document = []
+    for file in file_paths:
+        content = read_md_file(file)
+        if content is None:
+            continue
+        md_header_splits = markdown_splitter.split_text(content)
+        splits = text_splitter.split_documents(md_header_splits)
+        output_document.extend(splits)
+    return output_document
 
 
 def open_and_concatenate_ipynb(ipynb_path, encoding):
@@ -83,7 +88,6 @@ def open_and_concatenate_ipynb(ipynb_path, encoding):
 
     # 返回拼接后的内容
     return concatenated_content
-
 
 
 class FaissSearch:
@@ -112,10 +116,8 @@ class FaissSearch:
                     {"content": doc.page_content, "score": similarities[index], "title": ""}
                 )
         code = self.module_db.similarity_search(query, 1)[0]
-        retrieval_results.append(
-            {"content": code.metadata['ipynb'], "score": 1, "title": code.page_content}
-        )
-        
+        retrieval_results.append({"content": code.metadata["ipynb"], "score": 1, "title": code.page_content})
+
         return retrieval_results
 
 
@@ -133,15 +135,14 @@ def load_agent():
             "./docs/modules/message.md",
             "./docs/modules/chat_models.md",
             "./docs/modules/tools.md",
+            "./docs/quickstart/agent.md",
+            "./docs/quickstart/use-tool.md",
         ]
-        content = read_md_files(md_file_path)
-        markdown_splitter = MarkdownHeaderTextSplitter(headers_to_split_on=headers_to_split_on)
-        md_header_splits = markdown_splitter.split_text(content)
         chunk_size = 1000
         chunk_overlap = 30
-        text_splitter = RecursiveCharacterTextSplitter(chunk_size=chunk_size, chunk_overlap=chunk_overlap)
-        splits = text_splitter.split_documents(md_header_splits)
-        db = FAISS.from_documents(splits, embeddings)
+        content_doc = load_md_files_to_doc(md_file_path, chunk_size, chunk_overlap)
+
+        db = FAISS.from_documents(content_doc, embeddings)
         db.save_local(faiss_name)
 
         ipynb_path = [
@@ -151,13 +152,20 @@ def load_agent():
             "./docs/cookbooks/agent/message.ipynb",
             "./docs/cookbooks/agent/local_tool.ipynb",
             "./docs/cookbooks/agent/tools_intro.ipynb",
+            "./docs/cookbooks/agent/remote-tool/remote_tool.ipynb",
         ]
-        modules = [item[item.rfind('/')+1:item.rfind('.ipynb')] for item in ipynb_path]
+        modules = [item[item.rfind("/") + 1 : item.rfind(".ipynb")] for item in ipynb_path]
         module_doc = []
         from langchain_core.documents import Document
+
         for i in range(len(modules)):
-            module_doc.append(Document(page_content=modules[i], metadata={'ipynb': open_and_concatenate_ipynb(ipynb_path[i], 'utf-8')}))
-        
+            module_doc.append(
+                Document(
+                    page_content=modules[i],
+                    metadata={"ipynb": open_and_concatenate_ipynb(ipynb_path[i], "utf-8")},
+                )
+            )
+
         module_db = FAISS.from_documents(module_doc, embeddings)
         module_db.save_local(faiss_name_module)
 
@@ -172,7 +180,7 @@ def load_agent():
             "你是ERNIEBot Agent的小助手，用于解决用户关于EB-Agent的问题，涉及File, Memory, Message, Agent, ChatModels等模块。请你严格按照搜索到的内容回答，不要自己生成相关代码。"
         ),
         top_k=2,
-        token_limit=5000
+        token_limit=5000,
     )
     return agent
 

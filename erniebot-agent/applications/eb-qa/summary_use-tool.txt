@@ -1,0 +1,3 @@
+摘要：
+
+`erniebot-agent` 支持本地和远程工具（LocalTool 和 RemoteTool）的开发，方便与 ERNIE-Bot 交互。文档提供了如何使用本地工具`CurrentTimeTool`获取当前时间的示例代码，并指出开发者可以自定义本地工具。在远端服务器上，AI Studio 提供了大量的现有 RemoteTool。开发者可以通过复制相应的tool-id来使用这些工具，如文本审核工具'id'为`text-moderation`。还可部署自定义的 RemoteTool，并通过`from_url`方法接入。关于环境准备、自定义本地工具和自定义远程工具的更多细节，请参考相关文档链接。

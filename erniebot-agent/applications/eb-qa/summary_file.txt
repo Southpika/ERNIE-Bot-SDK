@@ -1,0 +1,1 @@
+File模块为文件管理提供类和工具，包含`File`基类及子类`LocalFile`和`RemoteFile`，以及`FileManager`和`GlobalFileManagerHandler`类。`File`类包含文件基础属性和管理方法，不建议直接操作。`FileManager`封装文件增删查操作，并管理本地和远程文件，在异步环境中用`GlobalFileManagerHandler`获取全局实例。`RemoteFileClient`负责与远程文件服务器交互。示例展示如何创建、检索、保存文件对象。注意`FileManager`不可复制且关闭时回收资源，远程文件操作需配置启用。详细API参考[API文档](../package/erniebot_agent/file.md)。

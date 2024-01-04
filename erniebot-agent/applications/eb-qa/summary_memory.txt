@@ -1,0 +1,1 @@
+摘要：Memory模块为Agent赋予记忆能力，包括长期记忆和短期记忆。长期记忆通过文件或数据库持久化，而短期记忆因上下文窗口限制易遗忘。Memory类主要由属性msg_manager和方法处理消息如增加、获取、清除历史等。Memory变体支持不同场景：WholeMemory存储所有消息，LimitTokensMemory基于token数量限制存储，SlidingWindowMemory根据轮数限制存储消息。使用方法中，通过实例化Memory类，通过add_message(s)和get_messages()等方法来管理消息。Memory模块设计的目的是为LLM构建多轮交互的记忆支持，并考虑未来加入更多记忆类型以捕捉语义信息等。

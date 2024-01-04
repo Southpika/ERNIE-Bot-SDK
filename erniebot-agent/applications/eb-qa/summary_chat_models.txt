@@ -1,0 +1,3 @@
+摘要：
+
+文心一言模型的`ChatModels`模块是百度研发的用于创建AI应用的工具，其中包括不同版本的文心大模型，如`ernie-3.5`、`ernie-turbo`、`ernie-4.0`、`ernie-longtext`，用于执行如文本补全、函数调用等任务。`ERNIE Bot Agent`推荐用于便捷地调用这些模型，降低开发难度。核心类包括`ChatModel`和`ERNIEBot`，具备模型名称、通行证token和默认参数等属性，以及实现多轮对话的`chat`方法。提供了命令行聊天应用和异步模型交互的示例代码，帮助用户快速开始使用。注意不同后端需要相应的access token鉴权，推荐使用文档中“aistudio”后端案例。

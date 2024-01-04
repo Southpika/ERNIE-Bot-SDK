@@ -1,0 +1,2 @@
+摘要:
+Message模块是大语言模型输入输出信息封装工具。它包括四种信息类型：`HumanMessage`为用户普通信息，`SystemMessage`为全局指令，`AIMessage`为模型返回信息，`FunctionMessage`为`Function call`的结果。核心类是`Message`，它有属性如角色、内容、Token长度，并提供诸如转成字典的方法。`SystemMessage`、`HumanMessage`、`AIMessage`、`FunctionMessage`类继承自`Message`类，每个类有相似属性和特定方法。使用示例包括直接与大语言模型交互及通过`ERNIE Bot Agent`简化交互代码的场景。代码实例展示了如何创建不同类型的`Message`和使用`SystemMessage`改变交互模式。文档还提供了API文档链接以获取更详细的接口信息。

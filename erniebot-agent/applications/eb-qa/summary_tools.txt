@@ -1,0 +1,3 @@
+摘要：
+
+Tool 模块是智能体（Agent）的辅助扩展，分为 LocalTool 和 RemoteTool，LocalTool 本地执行，RemoteTool 远程执行。核心类包括 Tool（抽象类，需继承实现 `__call__` 方法）、ToolParameterView（定义输入输出参数）、RemoteToolkit（远程工具集，通过 OpenAPI 初始化）和 RemoteTool（远端具体工具）。LocalTool 作为本地工具，例子是 CurrentTimeTool，获取当前时间。工具需配置输入输出参数、描述信息、具体逻辑和对话示例。更多细节参考相应 [API 文档](../package/erniebot_agent/tools.md)、[创建 LocalTool](../cookbooks/agent/local_tool.ipynb) 和 [创建 RemoteTool](../cookbooks/agent/remote_tool.ipynb)。

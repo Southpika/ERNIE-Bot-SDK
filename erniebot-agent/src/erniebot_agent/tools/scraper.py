@@ -1,27 +1,36 @@
 from __future__ import annotations
 
 from concurrent.futures.thread import ThreadPoolExecutor
-from typing import Any
+from functools import partial
+from typing import Any, List, Type
+
+import requests
+
+try:
+    from bs4 import BeautifulSoup
+except ImportError:
+    raise ImportError(
+        "Could not import scraper dependent packages. "
+        "Please install it with `pip install beautifulsoup4 lxml`."
+    )
 from langchain.document_loaders import PyMuPDFLoader
 from langchain.retrievers import ArxivRetriever
-from functools import partial
-import requests
-from bs4 import BeautifulSoup
-
-from typing import List, Type
-from erniebot_agent.tools.base import Tool, ToolParameterView
 from pydantic import Field
 
+from erniebot_agent.tools.base import Tool, ToolParameterView
 
 
 class ScraperToolInputItemView(ToolParameterView):
     url: str = Field(description="http 有效链接")
 
+
 class ScraperToolInputView(ToolParameterView):
     urls: List[ScraperToolInputItemView] = Field(description="http 有效链接列表")
 
+
 class ScraperToolOutputView(ToolParameterView):
     result: List[str] = Field(description="每个 URL 链接中有效的内容")
+
 
 class ScraperTool(Tool):
     """
@@ -38,16 +47,14 @@ class ScraperTool(Tool):
             urls:
         """
         self.session = requests.Session()
-        self.session.headers.update({
-            "User-Agent": user_agent
-        })
+        self.session.headers.update({"User-Agent": user_agent})
 
-    async def __call__(self, urls: List[str]) -> Any:
+    async def __call__(self, urls: List[dict]) -> Any:
         urls = [item["url"] for item in urls]
         partial_extract = partial(self.extract_data_from_link, session=self.session)
         with ThreadPoolExecutor(max_workers=20) as executor:
             contents = executor.map(partial_extract, urls)
-        res = [content for content in contents if content['raw_content'] is not None]
+        res = [content for content in contents if content["raw_content"] is not None]
         return {"result": res}
 
     def extract_data_from_link(self, link, session):
@@ -55,9 +62,7 @@ class ScraperTool(Tool):
         Extracts the data from the link
         """
         content = ""
-       
         try:
-
             if link.endswith(".pdf"):
                 content = self.scrape_pdf_with_pymupdf(link)
             elif "arxiv.org" in link:
@@ -67,15 +72,15 @@ class ScraperTool(Tool):
                 content = self.scrape_text_with_bs(link, session)
 
             if len(content) < 100:
-                return {'url': link, 'raw_content': None}
-            return {'url': link, 'raw_content': content}
-        except Exception as e:
-            return {'url': link, 'raw_content': None}
+                return {"url": link, "raw_content": None}
+            return {"url": link, "raw_content": content}
+        except Exception:
+            return {"url": link, "raw_content": None}
 
     def scrape_text_with_bs(self, link, session):
         response = session.get(link, timeout=4)
-        soup = BeautifulSoup(response.content, 'lxml', from_encoding=response.encoding)
-        # breakpoint()
+        soup = BeautifulSoup(response.content, "lxml", from_encoding=response.encoding)
+
         for script_or_style in soup(["script", "style"]):
             script_or_style.extract()
 
@@ -108,7 +113,7 @@ class ScraperTool(Tool):
         Returns:
             str: The text scraped from the pdf
         """
-        retriever = ArxivRetriever(load_max_docs=2, doc_content_chars_max=None)
+        retriever = ArxivRetriever(load_max_docs=2, doc_content_chars_max=None)  # type: ignore
         docs = retriever.get_relevant_documents(query=query)
         return docs[0].page_content
 
@@ -122,7 +127,8 @@ class ScraperTool(Tool):
             str: The text from the soup
         """
         text = ""
-        tags = ['p', 'h1', 'h2', 'h3', 'h4', 'h5', 'pre']
+        tags = ["p", "pre", "h1", "h2", "h3", "h4", "h5"]
         for element in soup.find_all(tags):  # Find all the <p> elements
-            text += element.text + "\n"
-        return text[:3000]
+            text += element.text + "\n\n"
+
+        return text

@@ -160,7 +160,7 @@ def setup_logging(
     use_standard_format: bool = True,
     use_file_handler: bool = False,
     max_log_length: int = 100,
-) -> None:
+):
     """Configures logging for the ERNIE Bot Agent library.
 
     Args:

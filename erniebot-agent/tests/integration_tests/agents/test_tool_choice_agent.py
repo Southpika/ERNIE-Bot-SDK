@@ -28,7 +28,7 @@ def tool():
     class WeatherTool(Tool):
         description: str = "获得指定地点的天气"
         input_type: Type[ToolParameterView] = WeatherInput
-        ouptut_type: Type[ToolParameterView] = WeatherOutput
+        output_type: Type[ToolParameterView] = WeatherOutput
 
         async def __call__(self, location: str, unit: str = "摄氏度") -> Dict[str, Any]:
             if location == "烟台":

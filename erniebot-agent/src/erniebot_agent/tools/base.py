@@ -45,7 +45,7 @@ class Tool(BaseTool, ABC):
     description: str
     name: Optional[str] = None
     input_type: Optional[Type[ToolParameterView]] = None
-    ouptut_type: Optional[Type[ToolParameterView]] = None
+    output_type: Optional[Type[ToolParameterView]] = None
 
     def __str__(self) -> str:
         name = self.name if self.name else self.tool_name
@@ -81,8 +81,8 @@ class Tool(BaseTool, ABC):
         else:
             inputs["parameters"] = {"type": "object", "properties": {}}
 
-        if self.ouptut_type is not None:
-            inputs["responses"] = self.ouptut_type.function_call_schema()
+        if self.output_type is not None:
+            inputs["responses"] = self.output_type.function_call_schema()
 
         return scrub_dict(inputs) or {}
 

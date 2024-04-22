@@ -17,7 +17,7 @@ Tool 模块分为 LocalTool 和 RemoteTool 两类，LocalTool 运行在本地的
 ```python
 class CurrentTimeTool(Tool):
     description: str = "CurrentTimeTool 用于获取当前时间"
-    ouptut_type: Type[ToolParameterView] = CurrentTimeToolOutputView
+    output_type: Type[ToolParameterView] = CurrentTimeToolOutputView
 
     async def __call__(self) -> Dict[str, str]:
         return {"current_time": datetime.strftime(datetime.now(), "%Y年%m月%d日 %H时%M分%S秒")}
@@ -103,7 +103,7 @@ class CurrentTimeToolOutputView(ToolParameterView):
 
 class CurrentTimeTool(Tool):
     description: str = "CurrentTimeTool 用于获取当前时间"
-    ouptut_type: Type[ToolParameterView] = CurrentTimeToolOutputView
+    output_type: Type[ToolParameterView] = CurrentTimeToolOutputView
 
     async def __call__(self) -> Dict[str, str]:
         return {"current_time": datetime.strftime(datetime.now(), "%Y年%m月%d日 %H时%M分%S秒)}

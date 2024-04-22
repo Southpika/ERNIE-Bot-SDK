@@ -30,7 +30,7 @@ erniebot.ChatCompletion.create(
 
 | 参数名 | 类型 | 必填 | 描述 |
 | :--- | :--- | :--- | :--- |
-| model | str | 是 | 模型名称。当前支持`"ernie-3.5"`、`"ernie-turbo"`、`"ernie-4.0"`和`"ernie-longtext"`。 |
+| model | str | 是 | 模型名称。当前支持`"ernie-3.5"`、`"ernie-turbo"`、`"ernie-4.0"`和`"ernie-3.5-8k"`。 |
 | messages | list[dict] | 是 | 对话上下文信息。列表中的元素个数须为奇数。详见[messages](#messages)。 |
 | functions | list[dict] | 否 | 可触发函数的描述列表。详见[functions](#functions)。ernie-turbo模型暂不支持此参数。 |
 | temperature | float | 否 | 用于调节模型输出概率分布，从而控制生成结果的随机性。<ul><li>较高的数值会使生成结果更加随机，而较低的数值会使结果更加集中和确定；</li><li>默认<code>0.95</code>，范围为<code>(0, 1.0]</code>，不能为<code>0</code>；</li><li>建议只设置此参数和<code>top_p</code>中的一个。</li></ul> |

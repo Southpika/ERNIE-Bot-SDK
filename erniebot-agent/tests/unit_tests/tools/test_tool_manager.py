@@ -78,7 +78,7 @@ class TestToolManagerServe(unittest.IsolatedAsyncioTestCase):
         current_time = model_fields["current_time"]
         self.assertEqual(current_time.annotation, str)
         self.assertEqual(
-            current_time.description, CurrentTimeTool.ouptut_type.model_fields["current_time"].description
+            current_time.description, CurrentTimeTool.output_type.model_fields["current_time"].description
         )
 
 

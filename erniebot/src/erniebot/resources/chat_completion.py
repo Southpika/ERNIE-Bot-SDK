@@ -55,14 +55,30 @@ class ChatCompletion(EBResource, CreatableWithStreaming):
                 "ernie-3.5": {
                     "model_id": "completions",
                 },
-                "ernie-turbo": {
+                "ernie-3.5-8k": {
+                    "model_id": "completions",
+                },
+                "ernie-lite": {
                     "model_id": "eb-instant",
                 },
                 "ernie-4.0": {
                     "model_id": "completions_pro",
                 },
                 "ernie-longtext": {
-                    "model_id": "ernie_bot_8k",
+                    # ernie-longtext(ernie_bot_8k) will be deprecated in 2024.4.11
+                    "model_id": "completions",
+                },
+                "ernie-speed": {
+                    "model_id": "ernie_speed",
+                },
+                "ernie-speed-128k": {
+                    "model_id": "ernie-speed-128k",
+                },
+                "ernie-tiny-8k": {
+                    "model_id": "ernie-tiny-8k",
+                },
+                "ernie-char-8k": {
+                    "model_id": "ernie-char-8k",
                 },
             },
         },
@@ -72,14 +88,30 @@ class ChatCompletion(EBResource, CreatableWithStreaming):
                 "ernie-3.5": {
                     "model_id": "completions",
                 },
-                "ernie-turbo": {
+                "ernie-3.5-8k": {
+                    "model_id": "completions",
+                },
+                "ernie-lite": {
                     "model_id": "eb-instant",
                 },
                 "ernie-4.0": {
                     "model_id": "completions_pro",
                 },
                 "ernie-longtext": {
-                    "model_id": "ernie_bot_8k",
+                    # ernie-longtext(ernie_bot_8k) will be deprecated in 2024.4.11
+                    "model_id": "completions",
+                },
+                "ernie-speed": {
+                    "model_id": "ernie_speed",
+                },
+                "ernie-speed-128k": {
+                    "model_id": "ernie-speed-128k",
+                },
+                "ernie-tiny-8k": {
+                    "model_id": "ernie-tiny-8k",
+                },
+                "ernie-char-8k": {
+                    "model_id": "ernie-char-8k",
                 },
             },
         },
@@ -88,6 +120,15 @@ class ChatCompletion(EBResource, CreatableWithStreaming):
             "models": {
                 "ernie-3.5": {
                     "model_id": "completions",
+                },
+                "ernie-4.0": {
+                    "model_id": "completions_pro",
+                },
+                "ernie-longtext": {
+                    "model_id": "completions",
+                },
+                "ernie-speed": {
+                    "model_id": "ernie_speed",
                 },
             },
         },
@@ -246,6 +287,7 @@ class ChatCompletion(EBResource, CreatableWithStreaming):
             kwargs["headers"] = headers
         if request_timeout is not None:
             kwargs["request_timeout"] = request_timeout
+
         resp = resource.create_resource(**kwargs)
         return transform(ChatCompletionResponse.from_mapping, resp)
 
@@ -402,8 +444,20 @@ class ChatCompletion(EBResource, CreatableWithStreaming):
             kwargs["headers"] = headers
         if request_timeout is not None:
             kwargs["request_timeout"] = request_timeout
+
         resp = await resource.acreate_resource(**kwargs)
         return transform(ChatCompletionResponse.from_mapping, resp)
+
+    def _check_model_kwargs(self, model_name: str, kwargs: Dict[str, Any]) -> None:
+        if model_name in ("ernie-speed", "ernie-speed-128k", "ernie-char-8k", "ernie-tiny-8k", "ernie-lite"):
+            for arg in (
+                "functions",
+                "disable_search",
+                "enable_citation",
+                "tool_choice",
+            ):
+                if arg in kwargs:
+                    raise errors.InvalidArgumentError(f"`{arg}` is not supported by the {model_name} model.")
 
     def _prepare_create(self, kwargs: Dict[str, Any]) -> RequestWithStream:
         def _update_model_name(given_name: str, old_name_to_new_name: Dict[str, str]) -> str:
@@ -454,9 +508,11 @@ class ChatCompletion(EBResource, CreatableWithStreaming):
             model,
             {
                 "ernie-bot": "ernie-3.5",
-                "ernie-bot-turbo": "ernie-turbo",
+                "ernie-bot-turbo": "ernie-lite",
                 "ernie-bot-4": "ernie-4.0",
-                "ernie-bot-8k": "ernie-longtext",
+                "ernie-bot-8k": "ernie-3.5-8k",
+                "ernie-longtext": "ernie-3.5-8k",
+                "ernie-turbo": "ernie-lite",
             },
         )
 
@@ -478,10 +534,8 @@ class ChatCompletion(EBResource, CreatableWithStreaming):
 
         # params
         params = {}
-        if model == "ernie-turbo":
-            for arg in ("functions", "stop", "disable_search", "enable_citation"):
-                if arg in kwargs:
-                    raise errors.InvalidArgumentError(f"`{arg}` is not supported by the {model} model.")
+        self._check_model_kwargs(model, kwargs)
+
         params["messages"] = messages
         if "functions" in kwargs:
             functions = kwargs["functions"]
@@ -505,7 +559,7 @@ class ChatCompletion(EBResource, CreatableWithStreaming):
 
         # headers
         headers: HeadersType = {}
-        if self.api_type is APIType.AISTUDIO:
+        if self.api_type is APIType.AISTUDIO or self.api_type is APIType.CUSTOM:
             headers["Content-Type"] = "application/json"
         if "headers" in kwargs:
             headers.update(kwargs["headers"])

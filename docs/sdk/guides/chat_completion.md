@@ -48,7 +48,7 @@
 | ernie-3.5 | 具备优秀的知识增强和内容生成能力，在文本创作、问答、推理和代码生成等方面表现出色。 |`erniebot.ChatCompletion.create(model="ernie-3.5", ...)` |
 | ernie-turbo | 相比ernie-3.5模型具备更快的响应速度和学习能力，API调用成本更低。 | `erniebot.ChatCompletion.create(model="ernie-turbo", ...)` |
 | ernie-4.0 | 文心大模型4.0版本，具备系列模型中最优的理解和生成能力。 | `erniebot.ChatCompletion.create(model="ernie-4.0", ...)` |
-| ernie-longtext | 在ernie-3.5模型的基础上增强了对长对话上下文的支持，输入token数量上限为7000。 | `erniebot.ChatCompletion.create(model="ernie-longtext", ...)` |
+| ernie-3.5-8k | 在ernie-3.5模型的基础上增强了对长对话上下文的支持，输入token数量上限为7000。 | `erniebot.ChatCompletion.create(model="ernie-3.5-8k", ...)` |
 
 参阅[ChatCompletion API文档](../api_reference/chat_completion.md)了解API的完整使用方式。
 
@@ -60,7 +60,7 @@
 
 ### 模型的输入长度有限制吗？
 
-文心大模型对输入的token数量有限制。对于ernie-3.5、ernie-turbo和ernie-4.0模型，输入的token数量不能超过3000；对于ernie-longtext模型，输入token数量的限制是7000。以下分别讨论单轮和多轮对话的情形：
+文心大模型对输入的token数量有限制。对于ernie-3.5、ernie-turbo和ernie-4.0模型，输入的token数量不能超过3000；对于ernie-3.5-8k模型，输入token数量的限制是7000。以下分别讨论单轮和多轮对话的情形：
 
 * 单轮对话时，输入的token数量不能超出限制。
 * 多轮对话时，最后一条消息的token数量不能超出限制。此外，如果最后一条消息的token数量没有超出限制，而对话上下文（包括历史消息）的token总量超过了限制，则模型会在拼接输入时遗忘较早的历史信息，只保留满足token数限制的最近的对话上下文作为输入。

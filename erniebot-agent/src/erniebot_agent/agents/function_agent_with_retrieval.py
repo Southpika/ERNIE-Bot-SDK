@@ -67,7 +67,7 @@ class KnowledgeBaseTool(Tool):
     tool_name: str = "KnowledgeBaseTool"
     description: str = "在知识库中检索与用户输入query相关的段落"
     input_type: Type[ToolParameterView] = KnowledgeBaseToolInputView
-    ouptut_type: Type[ToolParameterView] = KnowledgeBaseToolOutputView
+    output_type: Type[ToolParameterView] = KnowledgeBaseToolOutputView
 
     def __init__(
         self,

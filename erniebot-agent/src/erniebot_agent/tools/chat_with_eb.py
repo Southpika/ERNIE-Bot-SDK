@@ -21,7 +21,7 @@ class ChatWithEB(Tool):
         "ChatWithEB是一款根据用户的问题，向EB生成式大语言模型进行提问，并获取EB回答结果的工具。EB一般能解决知识型问答、文本创作、信息查询、信息检索等基础的文本生成和信息检索功能"
     )
     input_type: Type[ToolParameterView] = ChatWithEBInputView
-    ouptut_type: Type[ToolParameterView] = ChatWithEBOutputView
+    output_type: Type[ToolParameterView] = ChatWithEBOutputView
 
     def __init__(self, llm: ERNIEBot):
         self.llm = llm

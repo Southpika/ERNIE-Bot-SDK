@@ -116,6 +116,9 @@ def python_type_from_json_type(json_type_dict: dict) -> Type[object]:
         return List[float]
     if json_type_value == "object":
         return List[ToolParameterView]
+    elif json_type_value == "array":
+        sub_type = python_type_from_json_type(json_type_dict["items"])
+        return List[sub_type]  # type: ignore
 
     raise ValueError(f"unsupported data type: {json_type_value}")
 
@@ -242,9 +245,6 @@ class ToolParameterView(BaseModel):
             # skip loading invalid field to improve compatibility
             if "type" not in field_dict:
                 raise ToolError(f"`type` field not found in `{field_name}` property", stage="Loading")
-
-            if "description" not in field_dict:
-                raise ToolError(f"`description` field not found in `{field_name}` property", stage="Loading")
 
             if field_name.startswith("__"):
                 continue

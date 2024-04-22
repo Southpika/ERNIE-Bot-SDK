@@ -54,7 +54,7 @@ class IdentityTool(Tool):
 
     description = "该工具原样返回输入字符串"
     input_type = _InputView
-    ouptut_type = _OutputView
+    output_type = _OutputView
 
     async def __call__(self, input):
         return {"identity": input}

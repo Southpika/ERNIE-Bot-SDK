@@ -25,7 +25,7 @@ class TextRepeaterToolOutputView(ToolParameterView):
 class TextRepeaterTool(Tool):
     description: str = "TextRepeaterTool用于将输入文件中的前10个字进行指定次数的重复并输出。"
     input_type: Type[ToolParameterView] = TextRepeaterToolInputView
-    ouptut_type: Type[ToolParameterView] = TextRepeaterToolOutputView
+    output_type: Type[ToolParameterView] = TextRepeaterToolOutputView
 
     async def __call__(self, input_file_id: str, repeat_times: int) -> Dict[str, Any]:
         if "<split>" in input_file_id:
@@ -79,7 +79,7 @@ class TextRepeaterNoFileToolOutputView(ToolParameterView):
 class TextRepeaterNoFileTool(Tool):
     description: str = "TextRepeaterNoFileTool用于将输入文本进行指定次数的重复并输出。"
     input_type: Type[ToolParameterView] = TextRepeaterNoFileToolInputView
-    ouptut_type: Type[ToolParameterView] = TextRepeaterNoFileToolOutputView
+    output_type: Type[ToolParameterView] = TextRepeaterNoFileToolOutputView
 
     async def __call__(self, text, repeat_times: int) -> Dict[str, Any]:
         text *= repeat_times

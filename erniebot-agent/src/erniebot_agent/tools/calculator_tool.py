@@ -21,7 +21,7 @@ class CalculatorToolOutputView(ToolParameterView):
 class CalculatorTool(Tool):
     description: str = "CalculatorTool用于执行数学公式计算"
     input_type: Type[ToolParameterView] = CalculatorToolInputView
-    ouptut_type: Type[ToolParameterView] = CalculatorToolOutputView
+    output_type: Type[ToolParameterView] = CalculatorToolOutputView
 
     async def __call__(self, math_formula: str) -> Dict[str, float]:
         return {"formula_result": eval(math_formula)}

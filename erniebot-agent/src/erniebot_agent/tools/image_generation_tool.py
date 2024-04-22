@@ -41,7 +41,7 @@ class ImageGenerationOutputView(ToolParameterView):
 class ImageGenerationTool(Tool):
     description: str = "AI作图、生成图片、画图的工具"
     input_type: Type[ToolParameterView] = ImageGenerationInputView
-    ouptut_type: Type[ToolParameterView] = ImageGenerationOutputView
+    output_type: Type[ToolParameterView] = ImageGenerationOutputView
 
     def __init__(
         self,

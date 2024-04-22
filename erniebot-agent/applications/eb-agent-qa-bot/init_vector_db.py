@@ -22,7 +22,7 @@ def get_summary(content: str) -> Union[str, None]:
     """Get summary of md files, you can also change another llm model."""
     chat_message = {"role": "user", "content": f"请帮我给以下markdown文件生成摘要用于用户问文档内容时的检索匹配，不要超过400个字：\n{content}"}
     summary = erniebot.ChatCompletion.create(
-        model="ernie-longtext",
+        model="ernie-3.5-8k",
         messages=[chat_message],
     ).get_result()
     return summary

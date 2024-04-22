@@ -8,14 +8,14 @@
 
 为了降低使用门槛和开发工作，我们推荐通过`ERNIE Bot Agent`来调用文心一言模型，助力大家快速开发出AI应用。
 
-`ERNIE Bot Agent`支持多个文心一言模型，包括`ernie-3.5`、`ernie-turbo`、`ernie-4.0`和`ernie-longtext`。
+`ERNIE Bot Agent`支持多个文心一言模型，包括`ernie-3.5`、`ernie-turbo`、`ernie-4.0`和`ernie-3.5-8k`。
 
 | 模型名称 | 说明 | 功能 | 输入token数量上限 |
 |:--- | :--- | :--- | :--- |
 | ernie-3.5 | 文心大模型3.5版本。具备优秀的知识增强和内容生成能力，在文本创作、问答、推理和代码生成等方面表现出色。 | 对话补全，函数调用 | 3000 |
 | ernie-turbo | 文心大模型。相比ernie-3.5模型具备更快的响应速度和学习能力，API调用成本更低。 | 对话补全 |  3000 |
 | ernie-4.0 | 文心大模型4.0版本，具备目前系列模型中最优的理解和生成能力。 | 对话补全，函数调用 |  3000 |
-| ernie-longtext | 文心大模型。在ernie-3.5模型的基础上增强了对长对话上下文的支持，输入token数量上限为7000。 | 对话补全，函数调用 |  7000 |
+| ernie-3.5-8k | 文心大模型。在ernie-3.5模型的基础上增强了对长对话上下文的支持，输入token数量上限为7000。 | 对话补全，函数调用 |  7000 |
 
 ## 2. 核心类
 
@@ -25,7 +25,7 @@
 
 | 属性       | 类型           | 描述                                                      |
 | ---------- | -------------- | ------------------------------------------------------- |
-| model         | str          | 文心一言模型的名称，支持"ernie-3.5", "ernie-turbo", "ernie-4.0", "ernie-longtext"   |
+| model         | str          | 文心一言模型的名称，支持"ernie-3.5", "ernie-turbo", "ernie-4.0", "ernie-3.5-8k"   |
 | default_chat_kwargs | Dict[str, Any] | 设置调用文心一言模型的默认参数，支持`temperature`,`top_p`等，具体参考[文档](https://github.com/PaddlePaddle/ERNIE-SDK/blob/develop/docs/sdk/api_reference/chat_completion.md)|
 
 | 方法              | 描述                                                                  |
@@ -37,7 +37,7 @@
 
 | 属性       | 类型           | 描述                                                      |
 | ---------- | -------------| --------------------------------------------------------- |
-| model      | str          | 文心一言模型的名称，支持"ernie-3.5", "ernie-turbo", "ernie-4.0", "ernie-longtext"  |
+| model      | str          | 文心一言模型的名称，支持"ernie-3.5", "ernie-turbo", "ernie-4.0", "ernie-3.5-8k"  |
 | api_type   | str          | 文心一言模型的后端，支持"aistudio"和"qianfan"，默认是"aistudio"。                    |
 | access_token | Optional[str]  | 文心一言模型的鉴权access token，不同后端需要使用对应的access token                |
 | enable_multi_step_tool_call | bool  | 设置是否开启多工具规划连续调用的功能，默认为False                            |

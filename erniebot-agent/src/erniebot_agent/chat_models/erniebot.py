@@ -108,7 +108,7 @@ class ERNIEBot(BaseERNIEBot):
 
         Args:
             model (str): The model name. It should be "ernie-3.5", "ernie-turbo", "ernie-4.0", or
-                "ernie-longtext".
+                "ernie-3.5-8k".
             api_type (str): The backend of erniebot. It should be "aistudio" or "qianfan".
                 Defaults to "aistudio".
             access_token (Optional[str]): The access token for the backend of erniebot.

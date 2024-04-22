@@ -124,7 +124,7 @@ class ToolManager(object):
             app.add_api_route(
                 f"/erniebot-agent-tools/0.0/{tool_name}",
                 endpoint=func,
-                response_model=tool.ouptut_type,
+                response_model=tool.output_type,
                 description=tool.description,
                 operation_id=tool.tool_name,
                 methods=["POST"],

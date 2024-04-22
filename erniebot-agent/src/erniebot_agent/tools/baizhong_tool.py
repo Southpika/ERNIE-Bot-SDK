@@ -28,7 +28,7 @@ class BaizhongSearchToolOutputView(ToolParameterView):
 class BaizhongSearchTool(Tool):
     description: str = "在知识库中检索与用户输入query相关的段落"
     input_type: Type[ToolParameterView] = BaizhongSearchToolInputView
-    ouptut_type: Type[ToolParameterView] = BaizhongSearchToolOutputView
+    output_type: Type[ToolParameterView] = BaizhongSearchToolOutputView
 
     def __init__(
         self, description, db, threshold: float = 0.0, input_type=None, output_type=None, examples=None
@@ -40,7 +40,7 @@ class BaizhongSearchTool(Tool):
         if input_type is not None:
             self.input_type = input_type
         if output_type is not None:
-            self.ouptut_type = output_type
+            self.output_type = output_type
         if examples is not None:
             self.few_shot_examples = examples
         self.threshold = threshold

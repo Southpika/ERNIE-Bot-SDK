@@ -293,7 +293,7 @@ class ChatCompletion(EBResource, CreatableWithStreaming):
         if request_timeout is not None:
             kwargs["request_timeout"] = request_timeout
 
-        resp = resource.create_resource(**kwargs)    
+        resp = resource.create_resource(**kwargs)
         return transform(ChatCompletionResponse.from_mapping, resp)
 
     @overload
@@ -344,7 +344,8 @@ class ChatCompletion(EBResource, CreatableWithStreaming):
         validate_functions: bool = ...,
         extra_params: Optional[dict] = ...,
         headers: Optional[HeadersType] = ...,
-        request_timeout: Optional[float] = ...,        max_output_tokens: Optional[int] = ...,
+        request_timeout: Optional[float] = ...,
+        max_output_tokens: Optional[int] = ...,
         _config_: Optional[ConfigDictType] = ...,
     ) -> AsyncIterator["ChatCompletionResponse"]:
         ...
@@ -370,7 +371,8 @@ class ChatCompletion(EBResource, CreatableWithStreaming):
         validate_functions: bool = ...,
         extra_params: Optional[dict] = ...,
         headers: Optional[HeadersType] = ...,
-        request_timeout: Optional[float] = ...,        max_output_tokens: Optional[int] = ...,
+        request_timeout: Optional[float] = ...,
+        max_output_tokens: Optional[int] = ...,
         _config_: Optional[ConfigDictType] = ...,
     ) -> Union["ChatCompletionResponse", AsyncIterator["ChatCompletionResponse"]]:
         ...
@@ -458,12 +460,7 @@ class ChatCompletion(EBResource, CreatableWithStreaming):
 
     def _check_model_kwargs(self, model_name: str, kwargs: Dict[str, Any]) -> None:
         if model_name in ("ernie-speed", "ernie-speed-128k", "ernie-char-8k", "ernie-tiny-8k", "ernie-lite"):
-            for arg in (
-                "functions",
-                "disable_search",
-                "enable_citation",
-                "tool_choice",
-            ):
+            for arg in ("functions", "disable_search", "enable_citation", "tool_choice"):
                 if arg in kwargs:
                     raise errors.InvalidArgumentError(f"`{arg}` is not supported by the {model_name} model.")
 
@@ -500,7 +497,7 @@ class ChatCompletion(EBResource, CreatableWithStreaming):
             "extra_params",
             "headers",
             "request_timeout",
-            "max_output_tokens"
+            "max_output_tokens",
         }
 
         invalid_keys = kwargs.keys() - valid_keys
